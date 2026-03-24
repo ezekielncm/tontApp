@@ -77,6 +77,9 @@ public class Notification : AggregateRoot<NotificationId>
 
     public bool MarquerEchouee()
     {
+        if (Statut == NotificationStatus.Envoyee)
+            throw new InvalidOperationException("Cannot mark a sent notification as failed.");
+
         TentativesEnvoi++;
 
         if (TentativesEnvoi >= MaxTentatives)

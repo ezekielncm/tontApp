@@ -115,4 +115,13 @@ public class NotificationTests
 
         Assert.False(notification.PeutReessayer());
     }
+
+    [Fact]
+    public void MarquerEchouee_WhenAlreadySent_ThrowsInvalidOperationException()
+    {
+        var notification = CreateDefaultNotification();
+        notification.MarquerEnvoyee();
+
+        Assert.Throws<InvalidOperationException>(() => notification.MarquerEchouee());
+    }
 }

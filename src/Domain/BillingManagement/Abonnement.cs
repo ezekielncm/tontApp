@@ -43,7 +43,7 @@ public sealed class Abonnement : AggregateRoot<AbonnementId>
         {
             PlanTarifaire.Gratuit => 0m,
             PlanTarifaire.Pro => 2000m,
-            PlanTarifaire.Imf => 0m,
+            PlanTarifaire.Imf => 0m, // Custom pricing negotiated separately; set via dedicated method
             _ => throw new ArgumentOutOfRangeException(nameof(plan))
         };
 

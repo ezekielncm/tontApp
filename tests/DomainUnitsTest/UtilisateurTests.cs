@@ -7,7 +7,7 @@ namespace DomainUnitsTest;
 public class UtilisateurTests
 {
     private static Utilisateur CreateDefaultUtilisateur(
-        string telephone = "+221770001234",
+        string telephone = "+22670001234",
         string nom = "Moussa Diop",
         string motDePasseHash = "hashedpassword123",
         RoleUtilisateur role = RoleUtilisateur.Membre)
@@ -20,7 +20,7 @@ public class UtilisateurTests
     {
         var utilisateur = CreateDefaultUtilisateur();
 
-        Assert.Equal("+221770001234", utilisateur.Telephone);
+        Assert.Equal("+22670001234", utilisateur.Telephone);
         Assert.Equal("Moussa Diop", utilisateur.Nom);
         Assert.Equal(RoleUtilisateur.Membre, utilisateur.Role);
         Assert.True(utilisateur.EstActif);
@@ -50,7 +50,7 @@ public class UtilisateurTests
 
         var domainEvent = Assert.Single(utilisateur.DomainEvents);
         var createdEvent = Assert.IsType<UtilisateurCreatedEvent>(domainEvent);
-        Assert.Equal("+221770001234", createdEvent.Telephone);
+        Assert.Equal("+22670001234", createdEvent.Telephone);
         Assert.Equal("Moussa Diop", createdEvent.Nom);
     }
 

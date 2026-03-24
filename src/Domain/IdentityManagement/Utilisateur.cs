@@ -44,8 +44,8 @@ public class Utilisateur : AggregateRoot<UtilisateurId>
         if (string.IsNullOrWhiteSpace(telephone))
             throw new ArgumentException("Telephone must not be empty.", nameof(telephone));
 
-        if (!telephone.StartsWith('+'))
-            throw new ArgumentException("Telephone must start with '+'.", nameof(telephone));
+        if (!telephone.StartsWith('+') || telephone.Length < 4)
+            throw new ArgumentException("Telephone must start with '+' and contain at least a country code.", nameof(telephone));
 
         if (string.IsNullOrWhiteSpace(nom))
             throw new ArgumentException("Nom must not be empty.", nameof(nom));
