@@ -1,0 +1,422 @@
+@startuml TontinesDigitales_DDD
+!define AGGREGATE_ROOT #E8E6FD
+!define ENTITY         #EAF3DE
+!define VALUE_OBJECT   #FFF8E8
+!define DOMAIN_EVENT   #FAE8E8
+!define DOMAIN_SERVICE #E6F4FF
+!define REPOSITORY     #F4F4F4
+
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #AAAAAA
+skinparam classFontSize 12
+skinparam classHeaderBackgroundColor #F5F5F5
+skinparam ArrowColor #555555
+skinparam ArrowThickness 1.2
+skinparam linetype ortho
+skinparam nodesep 40
+skinparam ranksep 60
+
+' ============================================================
+' BOUNDED CONTEXT 1 : Tontine Management
+' ============================================================
+package "Tontine Management BC" #EEEDFEaa {
+
+  class Tontine <<AggregateRoot>> AGGREGATE_ROOT {
+    + id          : TontineId
+    + nom         : string
+    + statut      : StatutTontine
+    + dateCreation: DateTimeOffset
+    + reglement   : Reglement
+    - membres     : List<Membre>
+    - tours       : List<TourDeRole>
+    + creer(commande: CreerTontineCmd): Result
+    + ajouterMembre(membre: Membre): Result
+    + ouvrirTour(): Result<TourDeRole>
+    + cloturerTour(tourId: TourDeRoleId): Result
+    + clore(): Result
+    + GetDomainEvents(): IEnumerable<IDomainEvent>
+  }
+
+  class TourDeRole <<Entity>> ENTITY {
+    + id            : TourDeRoleId
+    + numero        : int
+    + beneficiaireId: MembreId
+    + dateOuverture : DateTimeOffset
+    + dateCloture   : DateTimeOffset?
+    + statut        : StatutTour
+    + montantAttendu: Montant
+    + estComplet()  : bool
+  }
+
+  class Membre <<Entity>> ENTITY {
+    + id          : MembreId
+    + utilisateurId: UtilisateurId
+    + rang        : int
+    + dateAdhesion: DateTimeOffset
+    + statut      : StatutMembre
+    + estActif()  : bool
+  }
+
+  class Reglement <<ValueObject>> VALUE_OBJECT {
+    + montantCotisation : Montant
+    + periodicite       : Periodicite
+    + nombreMembresMax  : int
+    + penaliteRetard    : Montant
+    + modeAttribution   : ModeAttribution
+    + Validate()        : Result
+  }
+
+  class TontineId <<ValueObject>> VALUE_OBJECT {
+    + Value : Guid
+  }
+
+  class MembreId <<ValueObject>> VALUE_OBJECT {
+    + Value : Guid
+  }
+
+  class TourDeRoleId <<ValueObject>> VALUE_OBJECT {
+    + Value : Guid
+  }
+
+  enum StatutTontine {
+    BROUILLON
+    ACTIVE
+    SUSPENDUE
+    CLOTUREE
+  }
+
+  enum StatutTour {
+    OUVERT
+    EN_COURS
+    CLOS
+    LITIGE
+  }
+
+  enum StatutMembre {
+    ACTIF
+    SUSPENDU
+    EXCLU
+  }
+
+  enum ModeAttribution {
+    TIRAGE_AU_SORT
+    ROTATION_FIXE
+    ENCHERES
+  }
+
+  enum Periodicite {
+    HEBDOMADAIRE
+    MENSUELLE
+    BIMENSUELLE
+  }
+
+  interface ITontineRepository <<Repository>> REPOSITORY {
+    + GetById(id: TontineId): Task<Tontine?>
+    + Save(tontine: Tontine): Task
+    + GetByMembre(membreId: MembreId): Task<IEnumerable<Tontine>>
+    + GetActives(): Task<IEnumerable<Tontine>>
+  }
+
+  class TontineCreeeEvent <<DomainEvent>> DOMAIN_EVENT {
+    + TontineId   : TontineId
+    + CreateurId  : UtilisateurId
+    + OccurredOn  : DateTimeOffset
+  }
+
+  class TourOuvertEvent <<DomainEvent>> DOMAIN_EVENT {
+    + TontineId   : TontineId
+    + TourId      : TourDeRoleId
+    + Beneficiaire: MembreId
+    + OccurredOn  : DateTimeOffset
+  }
+
+  class MembreAjouteEvent <<DomainEvent>> DOMAIN_EVENT {
+    + TontineId   : TontineId
+    + MembreId    : MembreId
+    + OccurredOn  : DateTimeOffset
+  }
+
+  ' Relations internes BC1
+  Tontine "1" *-- "1" Reglement      : contient
+  Tontine "1" *-- "1..*" Membre      : regroupe
+  Tontine "1" *-- "0..*" TourDeRole  : planifie
+  Tontine ..> TontineId              : identifié par
+  Tontine ..> ITontineRepository     : persisted via
+  Tontine ..> TontineCreeeEvent      : publie
+  Tontine ..> TourOuvertEvent        : publie
+  Tontine ..> MembreAjouteEvent      : publie
+  TourDeRole ..> TourDeRoleId        : identifié par
+  TourDeRole "1" --> "1" MembreId    : bénéficiaire
+  Membre ..> MembreId                : identifié par
+  Tontine ..> StatutTontine          : statut
+  TourDeRole ..> StatutTour          : statut
+  Membre ..> StatutMembre            : statut
+  Reglement ..> ModeAttribution      : mode
+  Reglement ..> Periodicite          : périodicité
+}
+
+' ============================================================
+' BOUNDED CONTEXT 2 : Paiement
+' ============================================================
+package "Paiement BC" #E1F5EEaa {
+
+  class Versement <<AggregateRoot>> AGGREGATE_ROOT {
+    + id              : VersementId
+    + tontineId       : TontineId
+    + tourId          : TourDeRoleId
+    + payeurId        : MembreId
+    + montant         : Montant
+    + dateVersement   : DateTimeOffset
+    + statut          : StatutVersement
+    + referenceExterne: string?
+    + hashPrecedent   : string
+    + hashCourant     : string
+    + payer(cmd: PayerCmd): Result
+    + confirmer(ref: string): Result
+    + rejeter(motif: string): Result
+    + calculerHash(): string
+  }
+
+  class AuditEntry <<Entity>> ENTITY {
+    + id          : AuditEntryId
+    + versementId : VersementId
+    + action      : string
+    + acteurId    : UtilisateurId
+    + timestamp   : DateTimeOffset
+    + hashChaine  : string
+    + payload     : string
+  }
+
+  class Montant <<ValueObject>> VALUE_OBJECT {
+    + Valeur   : decimal
+    + Devise   : string
+    + Equals(other: Montant): bool
+    + operator+(a, b): Montant
+    + operator-(a, b): Montant
+    + EstPositif(): bool
+  }
+
+  class VersementId <<ValueObject>> VALUE_OBJECT {
+    + Value : Guid
+  }
+
+  enum StatutVersement {
+    EN_ATTENTE
+    INITIE
+    CONFIRME
+    REJETE
+    REMBOURSE
+  }
+
+  interface IVersementRepository <<Repository>> REPOSITORY {
+    + GetById(id: VersementId): Task<Versement?>
+    + Save(v: Versement): Task
+    + GetByTour(tourId: TourDeRoleId): Task<IEnumerable<Versement>>
+    + GetByMembre(membreId: MembreId): Task<IEnumerable<Versement>>
+    + GetSoldeByTontine(tontineId: TontineId): Task<Montant>
+  }
+
+  interface IMobileMoneyGateway <<Port>> DOMAIN_SERVICE {
+    + InitierPaiement(cmd: InitierPaiementCmd): Task<Result<string>>
+    + VerifierStatut(ref: string): Task<StatutTransaction>
+    + Rembourser(ref: string, montant: Montant): Task<Result>
+  }
+
+  class VersementConfirmeEvent <<DomainEvent>> DOMAIN_EVENT {
+    + VersementId : VersementId
+    + TontineId   : TontineId
+    + MembreId    : MembreId
+    + Montant     : Montant
+    + OccurredOn  : DateTimeOffset
+  }
+
+  class VersementRejeteEvent <<DomainEvent>> DOMAIN_EVENT {
+    + VersementId : VersementId
+    + Motif       : string
+    + OccurredOn  : DateTimeOffset
+  }
+
+  ' Relations internes BC2
+  Versement "1" *-- "0..*" AuditEntry   : trace
+  Versement ..> VersementId             : identifié par
+  Versement ..> Montant                 : montant
+  Versement ..> IVersementRepository    : persisted via
+  Versement ..> IMobileMoneyGateway     : paye via
+  Versement ..> VersementConfirmeEvent  : publie
+  Versement ..> VersementRejeteEvent    : publie
+  Versement ..> StatutVersement         : statut
+}
+
+' ============================================================
+' BOUNDED CONTEXT 3 : Credit Scoring
+' ============================================================
+package "Credit Scoring BC" #FFF0D0aa {
+
+  class ProfilCredit <<AggregateRoot>> AGGREGATE_ROOT {
+    + id              : ProfilCreditId
+    + membreId        : MembreId
+    + scoreActuel     : ScoreCalcule
+    + dateCalcul      : DateTimeOffset
+    + niveauRisque    : NiveauRisque
+    + calculerScore() : Result<ScoreCalcule>
+    + obtenirEligibilite(montant: Montant): bool
+  }
+
+  class HistoriqueComportement <<Entity>> ENTITY {
+    + id                    : Guid
+    + profilCreditId        : ProfilCreditId
+    + nombreCyclesCompletes : int
+    + nombreRetards         : int
+    + montantTotalCotise    : Montant
+    + tauxPonctualite       : decimal
+    + ancienneteEnMois      : int
+    + mettreAJour(ev: VersementConfirmeEvent): void
+  }
+
+  class ScoreCalcule <<ValueObject>> VALUE_OBJECT {
+    + Valeur        : int
+    + DateCalcul    : DateTimeOffset
+    + Composantes   : Dictionary<string,int>
+    + EstSuffisant(seuil: int): bool
+  }
+
+  class ProfilCreditId <<ValueObject>> VALUE_OBJECT {
+    + Value : Guid
+  }
+
+  enum NiveauRisque {
+    FAIBLE
+    MOYEN
+    ELEVE
+    TRES_ELEVE
+  }
+
+  interface IScoringEngine <<Port>> DOMAIN_SERVICE {
+    + Calculer(historique: HistoriqueComportement): Task<ScoreCalcule>
+  }
+
+  interface IProfilCreditRepository <<Repository>> REPOSITORY {
+    + GetByMembre(membreId: MembreId): Task<ProfilCredit?>
+    + Save(profil: ProfilCredit): Task
+  }
+
+  class ScoreMisAJourEvent <<DomainEvent>> DOMAIN_EVENT {
+    + MembreId    : MembreId
+    + NouveauScore: ScoreCalcule
+    + OccurredOn  : DateTimeOffset
+  }
+
+  ' Relations internes BC3
+  ProfilCredit "1" *-- "1" HistoriqueComportement : analyse
+  ProfilCredit "1" *-- "1" ScoreCalcule           : calcule
+  ProfilCredit ..> ProfilCreditId                 : identifié par
+  ProfilCredit ..> IScoringEngine                 : délègue à
+  ProfilCredit ..> IProfilCreditRepository        : persisted via
+  ProfilCredit ..> ScoreMisAJourEvent             : publie
+  ProfilCredit ..> NiveauRisque                   : évalue
+}
+
+' ============================================================
+' BOUNDED CONTEXT 4 : Notification
+' ============================================================
+package "Notification BC" #FAECE7aa {
+
+  class Notification <<AggregateRoot>> AGGREGATE_ROOT {
+    + id           : NotificationId
+    + destinataireId: MembreId
+    + canal        : Canal
+    + contenu      : ContenuMessage
+    + statut       : StatutNotif
+    + tentatives   : int
+    + dateEnvoi    : DateTimeOffset?
+    + envoyer()    : Result
+    + marquerEnvoyee(): void
+    + marquerEchec(err: string): void
+  }
+
+  class RappelSchedule <<Entity>> ENTITY {
+    + id          : Guid
+    + tontineId   : TontineId
+    + tourId      : TourDeRoleId
+    + typeRappel  : TypeRappel
+    + dateEcheance: DateTimeOffset
+    + estActif    : bool
+    + genererNotifications(): IEnumerable<Notification>
+  }
+
+  class ContenuMessage <<ValueObject>> VALUE_OBJECT {
+    + Sujet   : string
+    + Corps   : string
+    + Langue  : string
+    + Format(params: Dictionary<string,string>): ContenuMessage
+  }
+
+  class NotificationId <<ValueObject>> VALUE_OBJECT {
+    + Value : Guid
+  }
+
+  enum Canal {
+    SMS
+    PUSH
+    USSD
+    EMAIL
+  }
+
+  enum StatutNotif {
+    EN_ATTENTE
+    ENVOYEE
+    ECHEC
+    ANNULEE
+  }
+
+  enum TypeRappel {
+    PAIEMENT_DU
+    TOUR_PROCHAIN
+    PAIEMENT_EN_RETARD
+    TOUR_OUVERT
+  }
+
+  interface ISMSGateway <<Port>> DOMAIN_SERVICE {
+    + Envoyer(numero: string, message: string): Task<Result<string>>
+    + EnvoyerUSSD(session: string, message: string): Task<Result>
+  }
+
+  interface INotificationRepository <<Repository>> REPOSITORY {
+    + Save(n: Notification): Task
+    + GetPendingBatch(limite: int): Task<IEnumerable<Notification>>
+    + GetByDestinataire(membreId: MembreId): Task<IEnumerable<Notification>>
+  }
+
+  ' Relations internes BC4
+  Notification ..> ContenuMessage           : contient
+  Notification ..> NotificationId           : identifié par
+  Notification ..> ISMSGateway              : envoie via
+  Notification ..> INotificationRepository  : persisted via
+  Notification ..> Canal                    : via
+  Notification ..> StatutNotif              : statut
+  RappelSchedule ..> TypeRappel             : type
+  RappelSchedule "1" --> "0..*" Notification : génère
+}
+
+' ============================================================
+' RELATIONS INTER-BOUNDED CONTEXTS (Domain Events)
+' ============================================================
+TourOuvertEvent       ..> RappelSchedule    : déclenche (event handler)
+VersementConfirmeEvent ..> HistoriqueComportement : met à jour (event handler)
+VersementRejeteEvent   ..> Notification     : déclenche (event handler)
+ScoreMisAJourEvent     ..> Notification     : informe (event handler)
+TontineCreeeEvent      ..> RappelSchedule   : initialise (event handler)
+
+note top of TourOuvertEvent
+  Publié par Tontine BC
+  Consommé par Notification BC
+  via RabbitMQ / Service Bus
+end note
+
+note bottom of VersementConfirmeEvent
+  Publié par Paiement BC
+  Consommé par Credit Scoring BC
+  (mise à jour comportement)
+end note
+
+@enduml
