@@ -5,6 +5,9 @@
     <Project Path="src/Domain/Domain.csproj" Id="fcf20e51-96c7-41fd-9a47-6b89f8749877" />
     <Project Path="src/Infrastructure/Infrastructure.csproj" Id="9b739748-aebc-4c8b-9fa2-6d17136a2174" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DomainUnitsTest/DomainUnitsTest.csproj" Id="99fb9ddb-2d76-4e60-ab70-41ad5ce0340d" />
+  </Folder>
   <Project Path="docker-compose.dcproj">
     <Build />
   </Project>
