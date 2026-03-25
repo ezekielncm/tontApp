@@ -45,7 +45,7 @@ jobs:
           context: .
           file: src/Api/Dockerfile
           push: false
-          tags: tontApp:ci
+          tags: tontapp:ci
 
   # Exemple de job de déploiement (à adapter à ton infra : Azure Web App, container registry, etc.)
   # deploy:
