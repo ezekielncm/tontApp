@@ -1,0 +1,40 @@
+namespace Infrastructure.Persistence.Repositories;
+
+using Domain.IdentityManagement;
+using Domain.IdentityManagement.Repositories;
+using Domain.IdentityManagement.ValueObjects;
+using Microsoft.EntityFrameworkCore;
+
+internal sealed class UtilisateurRepository : IUtilisateurRepository
+{
+    private readonly TontineDbContext _dbContext;
+
+    public UtilisateurRepository(TontineDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<Utilisateur?> GetByIdAsync(UtilisateurId id, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Utilisateurs
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
+    public async Task<Utilisateur?> GetByTelephoneAsync(string telephone, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Utilisateurs
+            .FirstOrDefaultAsync(u => u.Telephone == telephone, cancellationToken);
+    }
+
+    public async Task AddAsync(Utilisateur utilisateur, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.Utilisateurs.AddAsync(utilisateur, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(Utilisateur utilisateur, CancellationToken cancellationToken = default)
+    {
+        _dbContext.Utilisateurs.Update(utilisateur);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+}
