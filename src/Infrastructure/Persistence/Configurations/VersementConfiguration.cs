@@ -35,6 +35,7 @@ internal sealed class VersementConfiguration : IEntityTypeConfiguration<Versemen
                 value => TourId.From(value))
             .IsRequired();
 
+        // PayeurId maps to membre_id in the DB schema (FK to membres_tontine)
         builder.Property(v => v.PayeurId)
             .HasColumnName("membre_id")
             .HasConversion(
