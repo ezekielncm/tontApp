@@ -1,16 +1,19 @@
 namespace Application.NotificationManagement.Commands.SendNotification;
 
 using Application.Common;
+using Domain.Common;
 using Domain.NotificationManagement.Repositories;
 using Domain.NotificationManagement.ValueObjects;
 
 public sealed class SendNotificationCommandHandler : ICommandHandler<SendNotificationCommand>
 {
     private readonly INotificationRepository _notificationRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public SendNotificationCommandHandler(INotificationRepository notificationRepository)
+    public SendNotificationCommandHandler(INotificationRepository notificationRepository, IUnitOfWork unitOfWork)
     {
         _notificationRepository = notificationRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task Handle(SendNotificationCommand request, CancellationToken cancellationToken)
@@ -23,5 +26,6 @@ public sealed class SendNotificationCommandHandler : ICommandHandler<SendNotific
         notification.MarquerEnvoyee();
 
         await _notificationRepository.UpdateAsync(notification, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

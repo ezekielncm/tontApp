@@ -23,12 +23,11 @@ internal sealed class TontineRepository : ITontineRepository
     public async Task AddAsync(Tontine tontine, CancellationToken cancellationToken = default)
     {
         await _dbContext.Tontines.AddAsync(tontine, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Tontine tontine, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Tontine tontine, CancellationToken cancellationToken = default)
     {
         _dbContext.Tontines.Update(tontine);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

@@ -29,12 +29,11 @@ internal sealed class UtilisateurRepository : IUtilisateurRepository
     public async Task AddAsync(Utilisateur utilisateur, CancellationToken cancellationToken = default)
     {
         await _dbContext.Utilisateurs.AddAsync(utilisateur, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Utilisateur utilisateur, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Utilisateur utilisateur, CancellationToken cancellationToken = default)
     {
         _dbContext.Utilisateurs.Update(utilisateur);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

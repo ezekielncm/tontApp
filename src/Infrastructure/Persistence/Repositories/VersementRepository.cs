@@ -40,12 +40,11 @@ internal sealed class VersementRepository : IVersementRepository
     public async Task AddAsync(Versement versement, CancellationToken cancellationToken = default)
     {
         await _dbContext.Versements.AddAsync(versement, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Versement versement, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Versement versement, CancellationToken cancellationToken = default)
     {
         _dbContext.Versements.Update(versement);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

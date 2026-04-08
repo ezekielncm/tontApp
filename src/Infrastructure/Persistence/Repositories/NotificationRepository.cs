@@ -30,12 +30,11 @@ internal sealed class NotificationRepository : INotificationRepository
     public async Task AddAsync(Notification notification, CancellationToken cancellationToken = default)
     {
         await _dbContext.Notifications.AddAsync(notification, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Notification notification, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Notification notification, CancellationToken cancellationToken = default)
     {
         _dbContext.Notifications.Update(notification);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

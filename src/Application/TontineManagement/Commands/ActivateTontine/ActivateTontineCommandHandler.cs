@@ -1,16 +1,19 @@
 namespace Application.TontineManagement.Commands.ActivateTontine;
 
 using Application.Common;
+using Domain.Common;
 using Domain.TontineManagement.Repositories;
 using Domain.TontineManagement.ValueObjects;
 
 public sealed class ActivateTontineCommandHandler : ICommandHandler<ActivateTontineCommand>
 {
     private readonly ITontineRepository _tontineRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public ActivateTontineCommandHandler(ITontineRepository tontineRepository)
+    public ActivateTontineCommandHandler(ITontineRepository tontineRepository, IUnitOfWork unitOfWork)
     {
         _tontineRepository = tontineRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task Handle(ActivateTontineCommand request, CancellationToken cancellationToken)
@@ -22,5 +25,6 @@ public sealed class ActivateTontineCommandHandler : ICommandHandler<ActivateTont
         tontine.Activate();
 
         await _tontineRepository.UpdateAsync(tontine, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

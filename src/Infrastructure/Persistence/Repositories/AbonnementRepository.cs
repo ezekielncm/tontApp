@@ -30,12 +30,11 @@ internal sealed class AbonnementRepository : IAbonnementRepository
     public async Task AddAsync(Abonnement abonnement, CancellationToken cancellationToken = default)
     {
         await _dbContext.Abonnements.AddAsync(abonnement, cancellationToken);
-        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Abonnement abonnement, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Abonnement abonnement, CancellationToken cancellationToken = default)
     {
         _dbContext.Abonnements.Update(abonnement);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 }

@@ -3,14 +3,17 @@ namespace Application.BillingManagement.Commands.RenewAbonnement;
 using Application.Common;
 using Domain.BillingManagement.Repositories;
 using Domain.BillingManagement.ValueObjects;
+using Domain.Common;
 
 public sealed class RenewAbonnementCommandHandler : ICommandHandler<RenewAbonnementCommand>
 {
     private readonly IAbonnementRepository _abonnementRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public RenewAbonnementCommandHandler(IAbonnementRepository abonnementRepository)
+    public RenewAbonnementCommandHandler(IAbonnementRepository abonnementRepository, IUnitOfWork unitOfWork)
     {
         _abonnementRepository = abonnementRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task Handle(RenewAbonnementCommand request, CancellationToken cancellationToken)
@@ -22,5 +25,6 @@ public sealed class RenewAbonnementCommandHandler : ICommandHandler<RenewAbonnem
         abonnement.Renouveler();
 
         await _abonnementRepository.UpdateAsync(abonnement, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

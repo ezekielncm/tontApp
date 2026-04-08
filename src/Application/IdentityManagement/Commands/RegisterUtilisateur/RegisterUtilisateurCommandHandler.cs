@@ -1,16 +1,19 @@
 namespace Application.IdentityManagement.Commands.RegisterUtilisateur;
 
 using Application.Common;
+using Domain.Common;
 using Domain.IdentityManagement;
 using Domain.IdentityManagement.Repositories;
 
 public sealed class RegisterUtilisateurCommandHandler : ICommandHandler<RegisterUtilisateurCommand, Guid>
 {
     private readonly IUtilisateurRepository _utilisateurRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public RegisterUtilisateurCommandHandler(IUtilisateurRepository utilisateurRepository)
+    public RegisterUtilisateurCommandHandler(IUtilisateurRepository utilisateurRepository, IUnitOfWork unitOfWork)
     {
         _utilisateurRepository = utilisateurRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Guid> Handle(RegisterUtilisateurCommand request, CancellationToken cancellationToken)
@@ -26,6 +29,7 @@ public sealed class RegisterUtilisateurCommandHandler : ICommandHandler<Register
             request.MotDePasse);
 
         await _utilisateurRepository.AddAsync(utilisateur, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return utilisateur.Id.Value;
     }

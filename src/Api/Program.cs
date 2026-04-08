@@ -116,7 +116,8 @@ public class Program
 
             app.UseHangfireDashboard("/hangfire", new DashboardOptions
             {
-                Authorization = [] // Configure auth for production
+                // TODO: Add IDashboardAuthorizationFilter for production to restrict access
+                IsReadOnlyFunc = _ => !app.Environment.IsDevelopment()
             });
 
             app.MapControllers();
