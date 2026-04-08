@@ -1,23 +1,30 @@
 /**
  * Tontine detail screen – shows full tontine information.
- * Uses React Query for cache-first offline reading.
+ * Features: progress bar (% completed), member status badges (green/orange/red),
+ * countdown timer to tour closing, skeleton loader, navigation to Paiement & Gestionnaire.
  */
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
-  TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../../navigation/types';
+import type { TontineMember } from '../../types/api';
 import { tontineService } from '../../services/tontineService';
+import { useAuthStore } from '../../store/authStore';
 import { ErrorBanner } from '../../components/ErrorBanner';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { ProgressBar } from '../../components/ProgressBar';
+import { MembreStatusBadge } from '../../components/MembreStatusBadge';
+import { CountdownTimer } from '../../components/CountdownTimer';
+import { TontineDetailSkeleton } from '../../components/SkeletonLoader';
+import { formatMontant } from '../../utils/format';
 import {
   colors,
   spacing,
@@ -33,18 +40,61 @@ export function TontineDetailScreen({
   navigation,
 }: Props): React.JSX.Element {
   const { tontineId } = route.params;
+  const userId = useAuthStore((s) => s.user?.id);
 
-  const { data: tontine, isLoading, error } = useQuery({
+  const {
+    data: tontine,
+    isLoading,
+    error,
+    refetch,
+    isRefetching,
+  } = useQuery({
     queryKey: ['tontine', tontineId],
     queryFn: () => tontineService.getTontineById(tontineId),
     staleTime: QUERY_STALE_TIME_MS,
     gcTime: QUERY_CACHE_TIME_MS,
   });
 
+  const isGestionnaire = tontine?.gestionnaireId === userId;
+
+  const handleNavigatePaiement = useCallback(() => {
+    if (tontine?.tourActuel) {
+      navigation.navigate('Paiement', {
+        tontineId,
+        tourId: tontine.tourActuel.id,
+        montant: tontine.montantCotisation,
+      });
+    }
+  }, [navigation, tontineId, tontine]);
+
+  const handleNavigateGestionnaire = useCallback(() => {
+    if (tontine?.tourActuel) {
+      navigation.navigate('Gestionnaire', {
+        tontineId,
+        tourId: tontine.tourActuel.id,
+      });
+    }
+  }, [navigation, tontineId, tontine]);
+
+  const renderMember = useCallback(
+    (member: TontineMember) => (
+      <View key={member.id} style={styles.memberRow}>
+        <View style={styles.memberInfo}>
+          <Text style={styles.memberName}>{member.nom}</Text>
+          <Text style={styles.memberPhone}>{member.telephone}</Text>
+        </View>
+        {member.statutPaiement ? (
+          <MembreStatusBadge statut={member.statutPaiement} />
+        ) : null}
+      </View>
+    ),
+    [],
+  );
+
   if (isLoading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={styles.container}>
+        <TontineDetailSkeleton />
       </View>
     );
   }
@@ -52,7 +102,9 @@ export function TontineDetailScreen({
   if (error) {
     return (
       <View style={styles.container}>
-        <ErrorBanner message={error.message} />
+        <View style={styles.content}>
+          <ErrorBanner message={error.message} />
+        </View>
       </View>
     );
   }
@@ -65,10 +117,19 @@ export function TontineDetailScreen({
     );
   }
 
+  const tour = tontine.tourActuel;
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetching}
+          onRefresh={() => void refetch()}
+          colors={[colors.primary]}
+        />
+      }
     >
       <Text style={styles.title}>{tontine.nom}</Text>
       <Text style={styles.description}>{tontine.description}</Text>
@@ -80,8 +141,7 @@ export function TontineDetailScreen({
       <View style={styles.infoRow}>
         <Text style={styles.label}>Cotisation</Text>
         <Text style={styles.value}>
-          {tontine.montantCotisation.toLocaleString('fr-FR')}{' '}
-          {tontine.devise}
+          {formatMontant(tontine.montantCotisation)}
         </Text>
       </View>
       <View style={styles.infoRow}>
@@ -89,27 +149,44 @@ export function TontineDetailScreen({
         <Text style={styles.value}>{tontine.frequence}</Text>
       </View>
       <View style={styles.infoRow}>
-        <Text style={styles.label}>Membres</Text>
-        <Text style={styles.value}>{tontine.nombreMembres}</Text>
+        <Text style={styles.label}>Gestionnaire</Text>
+        <Text style={styles.value}>{tontine.gestionnaireName}</Text>
       </View>
 
-      {tontine.tourActuel ? (
+      {tour ? (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tour en cours</Text>
           <Text style={styles.tourInfo}>
-            Tour #{tontine.tourActuel.numero} –{' '}
-            {tontine.tourActuel.beneficiaireNom}
+            Tour #{tour.numero} – {tour.beneficiaireNom}
           </Text>
+
+          <ProgressBar
+            current={tour.nombrePaiementsRecus}
+            max={tour.nombrePaiementsAttendus}
+            label={`Paiements : ${tour.nombrePaiementsRecus}/${tour.nombrePaiementsAttendus}`}
+          />
+
+          {tour.dateCloture ? (
+            <CountdownTimer
+              targetDate={tour.dateCloture}
+              label="Fin du tour"
+            />
+          ) : null}
+
           <PrimaryButton
             title="Effectuer un paiement"
-            onPress={() =>
-              navigation.navigate('Paiement', {
-                tontineId,
-                tourId: tontine.tourActuel?.id ?? '',
-              })
-            }
-            disabled={!tontine.tourActuel || !tontine.tourActuel.estOuvert}
+            onPress={handleNavigatePaiement}
+            disabled={!tour.estOuvert}
+            style={styles.actionButton}
           />
+
+          {isGestionnaire ? (
+            <PrimaryButton
+              title="Gérer le tour"
+              onPress={handleNavigateGestionnaire}
+              style={styles.gestionnaireButton}
+            />
+          ) : null}
         </View>
       ) : null}
 
@@ -117,12 +194,7 @@ export function TontineDetailScreen({
         <Text style={styles.sectionTitle}>
           Membres ({tontine.membres.length})
         </Text>
-        {tontine.membres.map((m) => (
-          <TouchableOpacity key={m.id} style={styles.memberRow}>
-            <Text style={styles.memberName}>{m.nom}</Text>
-            <Text style={styles.memberPhone}>{m.telephone}</Text>
-          </TouchableOpacity>
-        ))}
+        {tontine.membres.map(renderMember)}
       </View>
     </ScrollView>
   );
@@ -181,14 +253,26 @@ const styles = StyleSheet.create({
   tourInfo: {
     fontSize: fontSizes.md,
     color: colors.textSecondary,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  actionButton: {
+    marginTop: spacing.md,
+  },
+  gestionnaireButton: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.secondary,
   },
   memberRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  memberInfo: {
+    flex: 1,
+    marginRight: spacing.sm,
   },
   memberName: {
     fontSize: fontSizes.md,

@@ -28,3 +28,12 @@ export const QUERY_STALE_TIME_MS = 5 * 60 * 1_000;
 
 /** Cache time for React Query (30 minutes) */
 export const QUERY_CACHE_TIME_MS = 30 * 60 * 1_000;
+
+/** Number of days before tour closing to show urgency badge */
+export const URGENCY_THRESHOLD_DAYS = 3;
+
+/** Payment polling interval in ms */
+export const PAYMENT_POLL_INTERVAL_MS = 5_000;
+
+/** Maximum payment polling duration in ms (2 minutes) */
+export const PAYMENT_MAX_POLL_DURATION_MS = 2 * 60 * 1_000;

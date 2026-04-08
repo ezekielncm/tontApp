@@ -1,7 +1,7 @@
 /**
  * Main application navigation stack.
  * Shown when the user is authenticated.
- * Contains Home, TontineDetail, Paiement, and Profil screens.
+ * Contains Home, TontineDetail, Paiement, Gestionnaire, and Profil screens.
  */
 
 import React from 'react';
@@ -9,6 +9,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HomeScreen } from '../screens/app/HomeScreen';
 import { TontineDetailScreen } from '../screens/app/TontineDetailScreen';
 import { PaiementScreen } from '../screens/app/PaiementScreen';
+import { GestionnaireScreen } from '../screens/app/GestionnaireScreen';
 import { ProfilScreen } from '../screens/app/ProfilScreen';
 import type { AppStackParamList } from './types';
 import { colors } from '../config/theme';
@@ -41,6 +42,11 @@ export function AppStack(): React.JSX.Element {
         name="Paiement"
         component={PaiementScreen}
         options={{ title: 'Paiement' }}
+      />
+      <Stack.Screen
+        name="Gestionnaire"
+        component={GestionnaireScreen}
+        options={{ title: 'Gestion du tour' }}
       />
       <Stack.Screen
         name="Profil"
