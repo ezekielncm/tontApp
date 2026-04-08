@@ -144,3 +144,26 @@ export interface CloreTourResponse {
   tourId: string;
   estCloture: boolean;
 }
+
+// ─── Credit Scoring types ──────────────────────────────────────────────────────
+
+/** GET /api/v1/membres/:id/profil-credit response */
+export interface ProfilCreditResponse {
+  membreId: string;
+  score: number;
+  niveau: ProfilCreditNiveau;
+  donneesInsuffisantes: boolean;
+  composantes: ComposantesScore;
+  calculeLe: string;
+}
+
+export type ProfilCreditNiveau = 'Excellent' | 'Bon' | 'Moyen' | 'Faible';
+
+export interface ComposantesScore {
+  cyclesCompletes: number;
+  tauxPonctualite: number;
+  ancienneteEnMois: number;
+  contributionCycles: number;
+  contributionPonctualite: number;
+  contributionAnciennete: number;
+}

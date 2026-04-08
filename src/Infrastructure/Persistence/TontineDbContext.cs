@@ -3,6 +3,7 @@ namespace Infrastructure.Persistence;
 using System.Text.Json;
 using Domain.BillingManagement;
 using Domain.Common;
+using Domain.CreditScoringManagement;
 using Domain.IdentityManagement;
 using Domain.NotificationManagement;
 using Domain.NotificationManagement.Events;
@@ -26,6 +27,7 @@ public sealed class TontineDbContext : DbContext, IUnitOfWork
     public DbSet<Abonnement> Abonnements => Set<Abonnement>();
     public DbSet<PlanAbonnement> PlansAbonnement => Set<PlanAbonnement>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<ProfilCredit> ProfilsCredit => Set<ProfilCredit>();
 
     public TontineDbContext(DbContextOptions<TontineDbContext> options, IMediator mediator)
         : base(options)
