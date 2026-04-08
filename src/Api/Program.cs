@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Application;
 using Hangfire;
 using Infrastructure;
+using Infrastructure.Jobs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -119,6 +120,12 @@ public class Program
                 // TODO: Add IDashboardAuthorizationFilter for production to restrict access
                 IsReadOnlyFunc = _ => !app.Environment.IsDevelopment()
             });
+
+            // Register daily audit chain verification job (runs at 02:00 UTC every day)
+            RecurringJob.AddOrUpdate<VerifierChaineAuditJob>(
+                "verifier-chaine-audit-quotidien",
+                job => job.ExecuteAsync(CancellationToken.None),
+                Cron.Daily(2, 0));
 
             app.MapControllers();
             app.MapHealthChecks("/health");

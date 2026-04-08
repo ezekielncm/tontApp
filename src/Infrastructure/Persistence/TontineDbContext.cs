@@ -6,6 +6,7 @@ using Domain.Common;
 using Domain.IdentityManagement;
 using Domain.NotificationManagement;
 using Domain.PaymentManagement;
+using Domain.PaymentManagement.Entities;
 using Domain.PaymentManagement.Events;
 using Domain.TontineManagement;
 using MediatR;
@@ -17,6 +18,7 @@ public sealed class TontineDbContext : DbContext, IUnitOfWork
 
     public DbSet<Tontine> Tontines => Set<Tontine>();
     public DbSet<Versement> Versements => Set<Versement>();
+    public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Utilisateur> Utilisateurs => Set<Utilisateur>();
     public DbSet<Abonnement> Abonnements => Set<Abonnement>();

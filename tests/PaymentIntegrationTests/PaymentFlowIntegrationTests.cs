@@ -5,6 +5,7 @@ using Application.PaymentManagement.Commands.InitierVersement;
 using Application.PaymentManagement.Commands.RejeterVersement;
 using Domain.Common;
 using Domain.PaymentManagement;
+using Domain.PaymentManagement.Entities;
 using Domain.PaymentManagement.Ports;
 using Domain.PaymentManagement.Repositories;
 using Domain.PaymentManagement.ValueObjects;
@@ -316,10 +317,10 @@ public class PaymentFlowIntegrationTests
         var firstEntry = versement.AuditTrail.First();
         var lastEntry = versement.AuditTrail.Last();
 
-        Assert.Equal("VersementCree", firstEntry.Action);
-        Assert.Equal("VersementConfirme", lastEntry.Action);
-        Assert.Equal(string.Empty, firstEntry.PreviousHash);
-        Assert.Equal(firstEntry.Hash, lastEntry.PreviousHash);
+        Assert.Equal(AuditAction.VersementCree, firstEntry.Action);
+        Assert.Equal(AuditAction.VersementConfirme, lastEntry.Action);
+        Assert.Equal(AuditEntry.GenesisHash, firstEntry.HashPrecedent);
+        Assert.Equal(firstEntry.HashCourant, lastEntry.HashPrecedent);
     }
 
     [Fact]
@@ -340,7 +341,7 @@ public class PaymentFlowIntegrationTests
         Assert.Equal(2, versement.AuditTrail.Count);
 
         var lastEntry = versement.AuditTrail.Last();
-        Assert.Equal("VersementRejete", lastEntry.Action);
+        Assert.Equal(AuditAction.VersementRejete, lastEntry.Action);
     }
 
     [Fact]
