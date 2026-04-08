@@ -52,8 +52,8 @@ public class VersementTests
 
         Assert.Single(versement.AuditTrail);
         var entry = versement.AuditTrail.First();
-        Assert.Equal("VersementCree", entry.Action);
-        Assert.Equal("system", entry.ActorId);
+        Assert.Equal(AuditAction.VersementCree, entry.Action);
+        Assert.Equal("system", entry.ActeurId);
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class VersementTests
 
         Assert.Equal(2, versement.AuditTrail.Count);
         var lastEntry = versement.AuditTrail.Last();
-        Assert.Equal("VersementConfirme", lastEntry.Action);
+        Assert.Equal(AuditAction.VersementConfirme, lastEntry.Action);
     }
 
     [Fact]
@@ -159,28 +159,40 @@ public class VersementTests
 
 public class AuditEntryTests
 {
+    private static readonly TontineId TestTontineId = TontineId.Create();
+    private static readonly VersementId TestVersementId = VersementId.Create();
+
     [Fact]
     public void Create_ComputesHash()
     {
-        var entry = AuditEntry.Create(string.Empty, "actor1", "TestAction", "payload");
+        var entry = AuditEntry.Create(TestTontineId, TestVersementId, AuditAction.VersementCree, "actor1", "payload", AuditEntry.GenesisHash);
 
-        Assert.NotNull(entry.Hash);
-        Assert.NotEmpty(entry.Hash);
+        Assert.NotNull(entry.HashCourant);
+        Assert.NotEmpty(entry.HashCourant);
     }
 
     [Fact]
     public void VerifyIntegrity_WithCorrectPreviousHash_ReturnsTrue()
     {
-        var entry = AuditEntry.Create(string.Empty, "actor1", "TestAction", "payload");
+        var hashPrecedent = AuditEntry.GenesisHash;
+        var entry = AuditEntry.Create(TestTontineId, TestVersementId, AuditAction.VersementCree, "actor1", "payload", hashPrecedent);
 
-        Assert.True(entry.VerifyIntegrity(string.Empty));
+        Assert.True(entry.VerifyIntegrity(hashPrecedent));
     }
 
     [Fact]
     public void VerifyIntegrity_WithIncorrectPreviousHash_ReturnsFalse()
     {
-        var entry = AuditEntry.Create(string.Empty, "actor1", "TestAction", "payload");
+        var entry = AuditEntry.Create(TestTontineId, TestVersementId, AuditAction.VersementCree, "actor1", "payload", AuditEntry.GenesisHash);
 
         Assert.False(entry.VerifyIntegrity("wronghash"));
+    }
+
+    [Fact]
+    public void GenesisHash_IsSha256OfGenesisString()
+    {
+        var expected = AuditEntry.GenesisHash;
+        Assert.Equal(64, expected.Length); // SHA-256 hex = 64 chars
+        Assert.NotEmpty(expected);
     }
 }

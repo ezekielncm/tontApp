@@ -1,6 +1,7 @@
 ﻿namespace Infrastructure;
 
 using Application.IdentityManagement.Services;
+using Application.PaymentManagement.Services;
 using Domain.BillingManagement.Repositories;
 using Domain.Common;
 using Domain.IdentityManagement.Repositories;
@@ -11,6 +12,7 @@ using Domain.TontineManagement.Repositories;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Infrastructure.Auth;
+using Infrastructure.Jobs;
 using Infrastructure.Payment;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
@@ -34,9 +36,16 @@ public static class DependencyInjection
         // Repositories
         services.AddScoped<ITontineRepository, TontineRepository>();
         services.AddScoped<IVersementRepository, VersementRepository>();
+        services.AddScoped<IAuditEntryRepository, AuditEntryRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IUtilisateurRepository, UtilisateurRepository>();
         services.AddScoped<IAbonnementRepository, AbonnementRepository>();
+
+        // Audit trail service
+        services.AddScoped<IAuditTrailService, AuditTrailService>();
+
+        // Hangfire jobs
+        services.AddScoped<VerifierChaineAuditJob>();
 
         // Africa's Talking / Orange Money configuration
         services.Configure<AfricasTalkingOptions>(

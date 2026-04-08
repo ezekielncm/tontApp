@@ -89,7 +89,7 @@ internal sealed class VersementConfiguration : IEntityTypeConfiguration<Versemen
         // Audit trail navigation (private backing field)
         builder.HasMany<AuditEntry>("_auditTrail")
             .WithOne()
-            .HasForeignKey("versement_id")
+            .HasForeignKey(e => e.VersementId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Navigation("_auditTrail").UsePropertyAccessMode(PropertyAccessMode.Field);
@@ -121,28 +121,35 @@ internal sealed class AuditEntryConfiguration : IEntityTypeConfiguration<AuditEn
                 id => id.Value,
                 value => AuditEntryId.From(value));
 
-        builder.Property(e => e.PreviousHash)
-            .HasColumnName("hash_precedent")
-            .HasMaxLength(64)
+        builder.Property(e => e.VersementId)
+            .HasColumnName("versement_id")
+            .HasConversion(
+                id => id.Value,
+                value => VersementId.From(value))
             .IsRequired();
 
-        builder.Property(e => e.Hash)
-            .HasColumnName("hash_courant")
-            .HasMaxLength(64)
-            .IsRequired();
-
-        builder.Property(e => e.Timestamp)
-            .HasColumnName("horodatage")
-            .IsRequired();
-
-        builder.Property(e => e.ActorId)
-            .HasColumnName("acteur_id")
-            .HasMaxLength(100)
+        builder.Property(e => e.TontineId)
+            .HasColumnName("tontine_id")
+            .HasConversion(
+                id => id.Value,
+                value => TontineId.From(value))
             .IsRequired();
 
         builder.Property(e => e.Action)
             .HasColumnName("action")
             .HasMaxLength(50)
+            .IsRequired()
+            .HasConversion(
+                a => a.ToString(),
+                value => Enum.Parse<AuditAction>(value, ignoreCase: true));
+
+        builder.Property(e => e.ActeurId)
+            .HasColumnName("acteur_id")
+            .HasMaxLength(100)
+            .IsRequired();
+
+        builder.Property(e => e.Timestamp)
+            .HasColumnName("horodatage")
             .IsRequired();
 
         builder.Property(e => e.Payload)
@@ -150,10 +157,25 @@ internal sealed class AuditEntryConfiguration : IEntityTypeConfiguration<AuditEn
             .HasColumnType("jsonb")
             .IsRequired();
 
-        builder.HasIndex(e => new { e.Timestamp })
-            .HasDatabaseName("ix_audit_entries_versement");
+        builder.Property(e => e.HashPrecedent)
+            .HasColumnName("hash_precedent")
+            .HasMaxLength(64)
+            .IsRequired();
+
+        builder.Property(e => e.HashCourant)
+            .HasColumnName("hash_courant")
+            .HasMaxLength(64)
+            .IsRequired();
+
+        // Performance index for pagination: (tontine_id, horodatage DESC)
+        builder.HasIndex(e => new { e.TontineId, e.Timestamp })
+            .HasDatabaseName("ix_audit_entries_tontine_horodatage")
+            .IsDescending(false, true);
 
         builder.HasIndex(e => e.Action)
             .HasDatabaseName("ix_audit_entries_action");
+
+        builder.HasIndex(e => e.ActeurId)
+            .HasDatabaseName("ix_audit_entries_acteur");
     }
 }

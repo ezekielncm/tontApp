@@ -58,7 +58,8 @@ public class Versement : AggregateRoot<VersementId>
         TourId tourId,
         PayeurId payeurId,
         Montant montant,
-        string hashPrecedent = "")
+        string hashPrecedent = "",
+        string? hashPrecedentAudit = null)
     {
         var versement = new Versement(
             VersementId.Create(),
@@ -77,7 +78,8 @@ public class Versement : AggregateRoot<VersementId>
             Devise = versement.Montant.Devise
         });
 
-        versement.AddAuditEntry("system", "VersementCree", payload);
+        var auditHash = hashPrecedentAudit ?? AuditEntry.GenesisHash;
+        versement.AddAuditEntry("system", AuditAction.VersementCree, payload, auditHash);
 
         versement.AddDomainEvent(new VersementCreatedEvent(
             versement.Id,
@@ -88,7 +90,7 @@ public class Versement : AggregateRoot<VersementId>
         return versement;
     }
 
-    public void Confirmer(string referenceExterne)
+    public void Confirmer(string referenceExterne, string? hashPrecedentAudit = null)
     {
         if (Statut != VersementStatus.EnAttente)
             throw new InvalidOperationException("Only a pending versement can be confirmed.");
@@ -98,7 +100,8 @@ public class Versement : AggregateRoot<VersementId>
         ReferenceExterne = referenceExterne;
 
         var payload = JsonSerializer.Serialize(new { ReferenceExterne = referenceExterne });
-        AddAuditEntry("system", "VersementConfirme", payload);
+        var auditHash = hashPrecedentAudit ?? GetLastAuditHash();
+        AddAuditEntry("system", AuditAction.VersementConfirme, payload, auditHash);
 
         AddDomainEvent(new VersementConfirmedEvent(
             Id,
@@ -109,7 +112,7 @@ public class Versement : AggregateRoot<VersementId>
             referenceExterne));
     }
 
-    public void Rejeter(string raison)
+    public void Rejeter(string raison, string? hashPrecedentAudit = null)
     {
         if (Statut != VersementStatus.EnAttente)
             throw new InvalidOperationException("Only a pending versement can be rejected.");
@@ -117,7 +120,8 @@ public class Versement : AggregateRoot<VersementId>
         Statut = VersementStatus.Echoue;
 
         var payload = JsonSerializer.Serialize(new { Raison = raison });
-        AddAuditEntry("system", "VersementRejete", payload);
+        var auditHash = hashPrecedentAudit ?? GetLastAuditHash();
+        AddAuditEntry("system", AuditAction.VersementRejete, payload, auditHash);
 
         AddDomainEvent(new VersementRejectedEvent(Id, TontineId, PayeurId, raison));
     }
@@ -129,14 +133,16 @@ public class Versement : AggregateRoot<VersementId>
         if (HashCourant != expectedHash)
             return false;
 
-        // Verify the audit trail chain
-        var previousHash = string.Empty;
+        // Verify the audit trail chain (intra-versement)
+        string? previousHash = null;
         foreach (var entry in _auditTrail)
         {
-            if (!entry.VerifyIntegrity(previousHash))
+            // For the first entry, use its own HashPrecedent (set from tontine chain)
+            var expected = previousHash ?? entry.HashPrecedent;
+            if (!entry.VerifyIntegrity(expected))
                 return false;
 
-            previousHash = entry.Hash;
+            previousHash = entry.HashCourant;
         }
 
         return true;
@@ -152,13 +158,16 @@ public class Versement : AggregateRoot<VersementId>
         return Convert.ToHexStringLower(bytes);
     }
 
-    private void AddAuditEntry(string actorId, string action, string payload)
+    private void AddAuditEntry(string acteurId, AuditAction action, string payload, string hashPrecedent)
     {
-        var previousHash = _auditTrail.Count > 0
-            ? _auditTrail[^1].Hash
-            : string.Empty;
-
-        var entry = AuditEntry.Create(previousHash, actorId, action, payload);
+        var entry = AuditEntry.Create(TontineId, Id, action, acteurId, payload, hashPrecedent);
         _auditTrail.Add(entry);
+    }
+
+    private string GetLastAuditHash()
+    {
+        return _auditTrail.Count > 0
+            ? _auditTrail[^1].HashCourant
+            : AuditEntry.GenesisHash;
     }
 }
