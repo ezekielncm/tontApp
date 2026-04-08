@@ -8,6 +8,9 @@ services:
         BUILD_CONFIGURATION: Debug
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=tontinesapp;Username=tontinesapp;Password=${POSTGRES_PASSWORD:-changeme_dev}
     ports:
       - "8080:8080"
 
