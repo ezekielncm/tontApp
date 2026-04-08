@@ -125,7 +125,7 @@ public class TontineAggregateTests
     }
 
     [Fact]
-    public void Activate_WithOneMembers_ThrowsInvalidOperationException()
+    public void Activate_WithOneMember_ThrowsInvalidOperationException()
     {
         var tontine = CreateDefaultTontine();
         tontine.AddMember("A");

@@ -7,6 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 internal sealed class TontineRepository : ITontineRepository
 {
+    private const string MembersNavigation = "_members";
+    private const string RoundsNavigation = "_rounds";
+    private const string InvitationsNavigation = "_invitations";
+
     private readonly TontineDbContext _dbContext;
 
     public TontineRepository(TontineDbContext dbContext)
@@ -17,9 +21,9 @@ internal sealed class TontineRepository : ITontineRepository
     public async Task<Tontine?> GetByIdAsync(TontineId id, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Tontines
-            .Include("_members")
-            .Include("_rounds")
-            .Include("_invitations")
+            .Include(MembersNavigation)
+            .Include(RoundsNavigation)
+            .Include(InvitationsNavigation)
             .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
     }
 
@@ -27,9 +31,9 @@ internal sealed class TontineRepository : ITontineRepository
     {
         return await _dbContext.Tontines
             .AsNoTracking()
-            .Include("_members")
-            .Include("_rounds")
-            .Include("_invitations")
+            .Include(MembersNavigation)
+            .Include(RoundsNavigation)
+            .Include(InvitationsNavigation)
             .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
     }
 
@@ -37,8 +41,8 @@ internal sealed class TontineRepository : ITontineRepository
     {
         return await _dbContext.Tontines
             .AsNoTracking()
-            .Include("_members")
-            .Include("_rounds")
+            .Include(MembersNavigation)
+            .Include(RoundsNavigation)
             .ToListAsync(cancellationToken);
     }
 
@@ -46,8 +50,8 @@ internal sealed class TontineRepository : ITontineRepository
     {
         return await _dbContext.Tontines
             .AsNoTracking()
-            .Include("_members")
-            .Include("_rounds")
+            .Include(MembersNavigation)
+            .Include(RoundsNavigation)
             .Where(t => t.Status == status)
             .ToListAsync(cancellationToken);
     }
