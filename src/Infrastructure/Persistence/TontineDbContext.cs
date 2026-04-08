@@ -5,10 +5,12 @@ using Domain.BillingManagement;
 using Domain.Common;
 using Domain.IdentityManagement;
 using Domain.NotificationManagement;
+using Domain.NotificationManagement.Events;
 using Domain.PaymentManagement;
 using Domain.PaymentManagement.Entities;
 using Domain.PaymentManagement.Events;
 using Domain.TontineManagement;
+using Domain.TontineManagement.Events;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -48,7 +50,7 @@ public sealed class TontineDbContext : DbContext, IUnitOfWork
             })
             .ToList();
 
-        // Outbox pattern: persist VersementConfirmedEvent in the same transaction
+        // Outbox pattern: persist domain events in the same transaction
         foreach (var domainEvent in domainEvents)
         {
             if (domainEvent is VersementConfirmedEvent confirmedEvent)
@@ -64,6 +66,51 @@ public sealed class TontineDbContext : DbContext, IUnitOfWork
                         confirmedEvent.Montant,
                         confirmedEvent.ReferenceExterne,
                         confirmedEvent.OccurredOn
+                    }));
+
+                OutboxMessages.Add(outboxMessage);
+            }
+            else if (domainEvent is RoundOpenedEvent roundOpenedEvent)
+            {
+                var outboxMessage = OutboxMessage.Create(
+                    nameof(RoundOpenedEvent),
+                    JsonSerializer.Serialize(new
+                    {
+                        TontineId = roundOpenedEvent.TontineId.Value,
+                        RoundId = roundOpenedEvent.RoundId.Value,
+                        BeneficiaryId = roundOpenedEvent.BeneficiaryId.Value,
+                        roundOpenedEvent.RoundNumber,
+                        roundOpenedEvent.OccurredOn
+                    }));
+
+                OutboxMessages.Add(outboxMessage);
+            }
+            else if (domainEvent is PaiementEnRetardEvent retardEvent)
+            {
+                var outboxMessage = OutboxMessage.Create(
+                    nameof(PaiementEnRetardEvent),
+                    JsonSerializer.Serialize(new
+                    {
+                        TontineId = retardEvent.TontineId.Value,
+                        TourId = retardEvent.TourId.Value,
+                        PayeurId = retardEvent.PayeurId.Value,
+                        retardEvent.Montant,
+                        retardEvent.Devise,
+                        retardEvent.OccurredOn
+                    }));
+
+                OutboxMessages.Add(outboxMessage);
+            }
+            else if (domainEvent is NotificationCreatedEvent notificationCreatedEvent)
+            {
+                var outboxMessage = OutboxMessage.Create(
+                    nameof(NotificationCreatedEvent),
+                    JsonSerializer.Serialize(new
+                    {
+                        NotificationId = notificationCreatedEvent.NotificationId.Value,
+                        notificationCreatedEvent.DestinataireId,
+                        Type = notificationCreatedEvent.Type.ToString(),
+                        notificationCreatedEvent.OccurredOn
                     }));
 
                 OutboxMessages.Add(outboxMessage);
