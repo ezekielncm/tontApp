@@ -56,6 +56,7 @@ public class TontineEnhancedTests
         var tontine = CreateDefaultTontine();
         tontine.AddMember("Alice");
         tontine.AddMember("Bob");
+        tontine.AddMember("Charlie");
         tontine.Start();
 
         Assert.Throws<InvalidOperationException>(() => tontine.GenerateInvitation());
@@ -114,6 +115,7 @@ public class TontineEnhancedTests
         var tontine = CreateDefaultTontine();
         tontine.AddMember("Alice");
         tontine.AddMember("Bob");
+        tontine.AddMember("Charlie");
         tontine.ClearDomainEvents();
 
         tontine.Activate();
@@ -129,6 +131,7 @@ public class TontineEnhancedTests
         var tontine = CreateDefaultTontine();
         tontine.AddMember("Alice");
         tontine.AddMember("Bob");
+        tontine.AddMember("Charlie");
         tontine.ClearDomainEvents();
 
         tontine.Activate();
@@ -139,10 +142,11 @@ public class TontineEnhancedTests
     }
 
     [Fact]
-    public void Activate_WithLessThanTwoMembers_ThrowsInvalidOperationException()
+    public void Activate_WithLessThanThreeMembers_ThrowsInvalidOperationException()
     {
         var tontine = CreateDefaultTontine();
         tontine.AddMember("Alice");
+        tontine.AddMember("Bob");
 
         Assert.Throws<InvalidOperationException>(() => tontine.Activate());
     }
@@ -153,6 +157,7 @@ public class TontineEnhancedTests
         var tontine = CreateDefaultTontine();
         var alice = tontine.AddMember("Alice");
         tontine.AddMember("Bob");
+        tontine.AddMember("Charlie");
         tontine.Start();
         tontine.ClearDomainEvents();
 
@@ -195,18 +200,23 @@ public class TontineEnhancedTests
     [Fact]
     public void CloseRound_OnLastMember_CompletesTontine()
     {
-        var tontine = CreateDefaultTontine(maxMembers: 2);
+        var tontine = CreateDefaultTontine(maxMembers: 3);
         tontine.AddMember("Alice");
         tontine.AddMember("Bob");
+        tontine.AddMember("Charlie");
         tontine.Activate();
 
         // Close first round
         var firstRound = tontine.Rounds.First();
         tontine.CloseRound(firstRound.Id);
 
-        // Close second round (last member)
-        var secondRound = tontine.Rounds.Last();
+        // Close second round
+        var secondRound = tontine.Rounds.OrderBy(r => r.RoundNumber).Skip(1).First();
         tontine.CloseRound(secondRound.Id);
+
+        // Close third round (last member)
+        var thirdRound = tontine.Rounds.OrderBy(r => r.RoundNumber).Last();
+        tontine.CloseRound(thirdRound.Id);
 
         Assert.Equal(TontineStatus.Completed, tontine.Status);
     }

@@ -87,11 +87,12 @@ public class TontineTests
     [Fact]
     public void AddMember_WhenMaxReached_ThrowsInvalidOperationException()
     {
-        var tontine = CreateDefaultTontine(maxMembers: 2);
+        var tontine = CreateDefaultTontine(maxMembers: 3);
         tontine.AddMember("Alice");
         tontine.AddMember("Bob");
+        tontine.AddMember("Charlie");
 
-        Assert.Throws<InvalidOperationException>(() => tontine.AddMember("Charlie"));
+        Assert.Throws<InvalidOperationException>(() => tontine.AddMember("Dave"));
     }
 
     [Fact]
@@ -109,9 +110,10 @@ public class TontineTests
         var tontine = CreateDefaultTontine();
         tontine.AddMember("Alice");
         tontine.AddMember("Bob");
+        tontine.AddMember("Charlie");
         tontine.Start();
 
-        Assert.Throws<InvalidOperationException>(() => tontine.AddMember("Charlie"));
+        Assert.Throws<InvalidOperationException>(() => tontine.AddMember("Dave"));
     }
 
     [Fact]
@@ -134,6 +136,7 @@ public class TontineTests
         var tontine = CreateDefaultTontine();
         var member = tontine.AddMember("Alice");
         tontine.AddMember("Bob");
+        tontine.AddMember("Charlie");
         tontine.Start();
 
         Assert.Throws<InvalidOperationException>(() => tontine.RemoveMember(member.Id));
@@ -153,6 +156,7 @@ public class TontineTests
         var tontine = CreateDefaultTontine();
         tontine.AddMember("Alice");
         tontine.AddMember("Bob");
+        tontine.AddMember("Charlie");
         tontine.ClearDomainEvents();
 
         tontine.Start();
@@ -164,10 +168,11 @@ public class TontineTests
     }
 
     [Fact]
-    public void Start_WithLessThanTwoMembers_ThrowsInvalidOperationException()
+    public void Start_WithLessThanThreeMembers_ThrowsInvalidOperationException()
     {
         var tontine = CreateDefaultTontine();
         tontine.AddMember("Alice");
+        tontine.AddMember("Bob");
 
         Assert.Throws<InvalidOperationException>(() => tontine.Start());
     }
@@ -178,6 +183,7 @@ public class TontineTests
         var tontine = CreateDefaultTontine();
         tontine.AddMember("Alice");
         tontine.AddMember("Bob");
+        tontine.AddMember("Charlie");
         tontine.Start();
 
         Assert.Throws<InvalidOperationException>(() => tontine.Start());
@@ -199,6 +205,7 @@ public class TontineTests
         var tontine = CreateDefaultTontine();
         tontine.AddMember("Alice");
         tontine.AddMember("Bob");
+        tontine.AddMember("Charlie");
         tontine.Start();
 
         tontine.Cancel();
