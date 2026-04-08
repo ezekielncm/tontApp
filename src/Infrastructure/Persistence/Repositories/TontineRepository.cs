@@ -59,18 +59,14 @@ internal sealed class TontineRepository : ITontineRepository
 
     public async Task<Tontine?> GetByInvitationCodeHashAsync(string codeHash, CancellationToken cancellationToken = default)
     {
-        // Find the tontine that has an invitation with the matching code hash
-        var invitation = await _dbContext.Set<Invitation>()
-            .FirstOrDefaultAsync(i => i.CodeHash == codeHash, cancellationToken);
-
-        if (invitation is null)
-            return null;
-
-        // Get the tontine_id from the shadow property FK
-        var tontineIdValue = _dbContext.Entry(invitation).Property<Guid>("tontine_id").CurrentValue;
-        var tontineId = TontineId.From(tontineIdValue);
-
-        return await GetByIdAsync(tontineId, cancellationToken);
+        // Query tontines that have an invitation with the matching code hash
+        return await _dbContext.Tontines
+            .Include(MembersNavigation)
+            .Include(RoundsNavigation)
+            .Include(InvitationsNavigation)
+            .Where(t => _dbContext.Set<Invitation>()
+                .Any(i => EF.Property<Guid>(i, "tontine_id") == t.Id.Value && i.CodeHash == codeHash))
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task AddAsync(Tontine tontine, CancellationToken cancellationToken = default)

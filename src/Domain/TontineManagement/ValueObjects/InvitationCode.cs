@@ -27,9 +27,8 @@ public sealed class InvitationCode : ValueObject
 
         var code = string.Create(CodeLength, randomBytes.ToArray(), static (span, bytes) =>
         {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             for (int i = 0; i < span.Length; i++)
-                span[i] = chars[bytes[i] % chars.Length];
+                span[i] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[bytes[i] % 36];
         });
 
         return new InvitationCode(code);

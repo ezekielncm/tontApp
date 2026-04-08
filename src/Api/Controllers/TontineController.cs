@@ -269,7 +269,9 @@ public class TontineController : ControllerBase
     {
         try
         {
-            // Extract the authenticated user's ID from the JWT "sub" claim
+            // Extract the authenticated user's ID from the JWT "sub" claim.
+            // JwtService stores the user ID in JwtRegisteredClaimNames.Sub which may be
+            // mapped to ClaimTypes.NameIdentifier by the JWT middleware depending on config.
             var userIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
                 ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
