@@ -8,14 +8,13 @@ namespace DomainUnitsTest;
 
 public class VersementTests
 {
-    private static Versement CreateDefaultVersement(decimal montant = 100m, string currency = "XOF")
+    private static Versement CreateDefaultVersement(decimal montant = 500m, string devise = "XOF")
     {
         return Versement.Create(
             TontineId.Create(),
-            MemberId.Create(),
-            RoundId.Create(),
-            montant,
-            currency);
+            TourId.Create(),
+            PayeurId.Create(),
+            Montant.Create(montant, devise));
     }
 
     [Fact]
@@ -24,18 +23,18 @@ public class VersementTests
         var versement = CreateDefaultVersement();
 
         Assert.Equal(VersementStatus.EnAttente, versement.Statut);
-        Assert.Equal(100m, versement.Montant);
-        Assert.Equal("XOF", versement.Currency);
+        Assert.Equal(500m, versement.Montant.Valeur);
+        Assert.Equal("XOF", versement.Montant.Devise);
     }
 
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    [InlineData(-100)]
+    [InlineData(99)]
     public void Create_WithInvalidAmount_ThrowsArgumentException(decimal montant)
     {
         Assert.Throws<ArgumentException>(() =>
-            Versement.Create(TontineId.Create(), MemberId.Create(), RoundId.Create(), montant, "XOF"));
+            Versement.Create(TontineId.Create(), TourId.Create(), PayeurId.Create(), Montant.Create(montant, "XOF")));
     }
 
     [Fact]
@@ -55,6 +54,15 @@ public class VersementTests
         var entry = versement.AuditTrail.First();
         Assert.Equal("VersementCree", entry.Action);
         Assert.Equal("system", entry.ActorId);
+    }
+
+    [Fact]
+    public void Create_ComputesHashCourant()
+    {
+        var versement = CreateDefaultVersement();
+
+        Assert.NotNull(versement.HashCourant);
+        Assert.NotEmpty(versement.HashCourant);
     }
 
     [Fact]
@@ -102,22 +110,33 @@ public class VersementTests
     }
 
     [Fact]
-    public void Echouer_SetsStatusEchoue()
+    public void Rejeter_SetsStatusEchoue()
     {
         var versement = CreateDefaultVersement();
 
-        versement.Echouer("Payment failed");
+        versement.Rejeter("Payment failed");
 
         Assert.Equal(VersementStatus.Echoue, versement.Statut);
     }
 
     [Fact]
-    public void Echouer_WhenNotEnAttente_ThrowsInvalidOperationException()
+    public void Rejeter_RaisesVersementRejectedEvent()
+    {
+        var versement = CreateDefaultVersement();
+        versement.ClearDomainEvents();
+
+        versement.Rejeter("Payment failed");
+
+        Assert.Contains(versement.DomainEvents, e => e is VersementRejectedEvent);
+    }
+
+    [Fact]
+    public void Rejeter_WhenNotEnAttente_ThrowsInvalidOperationException()
     {
         var versement = CreateDefaultVersement();
         versement.Confirmer("REF-123");
 
-        Assert.Throws<InvalidOperationException>(() => versement.Echouer("reason"));
+        Assert.Throws<InvalidOperationException>(() => versement.Rejeter("reason"));
     }
 
     [Fact]

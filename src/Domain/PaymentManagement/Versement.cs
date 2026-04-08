@@ -1,5 +1,7 @@
 namespace Domain.PaymentManagement;
 
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Domain.Common;
 using Domain.PaymentManagement.Entities;
@@ -12,12 +14,13 @@ public class Versement : AggregateRoot<VersementId>
     private readonly List<AuditEntry> _auditTrail = [];
 
     public TontineId TontineId { get; private set; }
-    public MemberId MemberId { get; private set; }
-    public RoundId RoundId { get; private set; }
-    public decimal Montant { get; private set; }
-    public string Currency { get; private set; }
+    public TourId TourId { get; private set; }
+    public PayeurId PayeurId { get; private set; }
+    public Montant Montant { get; private set; }
     public VersementStatus Statut { get; private set; }
     public string? ReferenceExterne { get; private set; }
+    public string HashPrecedent { get; private set; }
+    public string HashCourant { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? ConfirmedAt { get; private set; }
     public IReadOnlyCollection<AuditEntry> AuditTrail => _auditTrail.AsReadOnly();
@@ -25,56 +28,53 @@ public class Versement : AggregateRoot<VersementId>
     private Versement() : base()
     {
         TontineId = default!;
-        MemberId = default!;
-        RoundId = default!;
-        Currency = string.Empty;
+        TourId = default!;
+        PayeurId = default!;
+        Montant = default!;
+        HashPrecedent = string.Empty;
+        HashCourant = string.Empty;
     }
 
     private Versement(
         VersementId id,
         TontineId tontineId,
-        MemberId memberId,
-        RoundId roundId,
-        decimal montant,
-        string currency) : base(id)
+        TourId tourId,
+        PayeurId payeurId,
+        Montant montant,
+        string hashPrecedent) : base(id)
     {
         TontineId = tontineId;
-        MemberId = memberId;
-        RoundId = roundId;
+        TourId = tourId;
+        PayeurId = payeurId;
         Montant = montant;
-        Currency = currency;
         Statut = VersementStatus.EnAttente;
+        HashPrecedent = hashPrecedent;
         CreatedAt = DateTime.UtcNow;
+        HashCourant = CalculerHash(id, montant, CreatedAt, hashPrecedent);
     }
 
     public static Versement Create(
         TontineId tontineId,
-        MemberId memberId,
-        RoundId roundId,
-        decimal montant,
-        string currency)
+        TourId tourId,
+        PayeurId payeurId,
+        Montant montant,
+        string hashPrecedent = "")
     {
-        if (montant <= 0)
-            throw new ArgumentException("Montant must be greater than zero.", nameof(montant));
-
-        if (string.IsNullOrWhiteSpace(currency))
-            throw new ArgumentException("Currency must not be empty.", nameof(currency));
-
         var versement = new Versement(
             VersementId.Create(),
             tontineId,
-            memberId,
-            roundId,
+            tourId,
+            payeurId,
             montant,
-            currency);
+            hashPrecedent);
 
         var payload = JsonSerializer.Serialize(new
         {
-            versement.TontineId.Value,
-            MemberId = versement.MemberId.Value,
-            RoundId = versement.RoundId.Value,
-            versement.Montant,
-            versement.Currency
+            TontineId = versement.TontineId.Value,
+            TourId = versement.TourId.Value,
+            PayeurId = versement.PayeurId.Value,
+            Montant = versement.Montant.Valeur,
+            Devise = versement.Montant.Devise
         });
 
         versement.AddAuditEntry("system", "VersementCree", payload);
@@ -82,8 +82,8 @@ public class Versement : AggregateRoot<VersementId>
         versement.AddDomainEvent(new VersementCreatedEvent(
             versement.Id,
             tontineId,
-            memberId,
-            montant));
+            payeurId,
+            montant.Valeur));
 
         return versement;
     }
@@ -103,27 +103,34 @@ public class Versement : AggregateRoot<VersementId>
         AddDomainEvent(new VersementConfirmedEvent(
             Id,
             TontineId,
-            MemberId,
-            RoundId,
-            Montant,
+            PayeurId,
+            TourId,
+            Montant.Valeur,
             referenceExterne));
     }
 
-    public void Echouer(string raison)
+    public void Rejeter(string raison)
     {
         if (Statut != VersementStatus.EnAttente)
-            throw new InvalidOperationException("Only a pending versement can be marked as failed.");
+            throw new InvalidOperationException("Only a pending versement can be rejected.");
 
         Statut = VersementStatus.Echoue;
 
         var payload = JsonSerializer.Serialize(new { Raison = raison });
-        AddAuditEntry("system", "VersementEchoue", payload);
+        AddAuditEntry("system", "VersementRejete", payload);
+
+        AddDomainEvent(new VersementRejectedEvent(Id, TontineId, PayeurId, raison));
     }
 
     public bool VerifierIntegrite()
     {
-        var previousHash = string.Empty;
+        // Verify the versement's own hash
+        var expectedHash = CalculerHash(Id, Montant, CreatedAt, HashPrecedent);
+        if (HashCourant != expectedHash)
+            return false;
 
+        // Verify the audit trail chain
+        var previousHash = string.Empty;
         foreach (var entry in _auditTrail)
         {
             if (!entry.VerifyIntegrity(previousHash))
@@ -133,6 +140,16 @@ public class Versement : AggregateRoot<VersementId>
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Computes a SHA-256 hash over (id + montant + date + hashPrecedent).
+    /// </summary>
+    public static string CalculerHash(VersementId id, Montant montant, DateTime date, string hashPrecedent)
+    {
+        var input = $"{id.Value}{montant.Valeur:F2}{date:O}{hashPrecedent}";
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(input));
+        return Convert.ToHexStringLower(bytes);
     }
 
     private void AddAuditEntry(string actorId, string action, string payload)

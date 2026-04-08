@@ -8,8 +8,8 @@ public sealed class VersementConfirmedEvent : IDomainEvent
 {
     public VersementId VersementId { get; }
     public TontineId TontineId { get; }
-    public MemberId MemberId { get; }
-    public RoundId RoundId { get; }
+    public PayeurId PayeurId { get; }
+    public TourId TourId { get; }
     public decimal Montant { get; }
     public string ReferenceExterne { get; }
     public DateTime OccurredOn { get; }
@@ -17,15 +17,15 @@ public sealed class VersementConfirmedEvent : IDomainEvent
     public VersementConfirmedEvent(
         VersementId versementId,
         TontineId tontineId,
-        MemberId memberId,
-        RoundId roundId,
+        PayeurId payeurId,
+        TourId tourId,
         decimal montant,
         string referenceExterne)
     {
         VersementId = versementId;
         TontineId = tontineId;
-        MemberId = memberId;
-        RoundId = roundId;
+        PayeurId = payeurId;
+        TourId = tourId;
         Montant = montant;
         ReferenceExterne = referenceExterne;
         OccurredOn = DateTime.UtcNow;

@@ -4,4 +4,4 @@ using Application.Common;
 
 public sealed record GetVersementsByRoundQuery(
     Guid TontineId,
-    Guid RoundId) : IQuery<IReadOnlyList<VersementDto>>;
+    Guid TourId) : IQuery<IReadOnlyList<VersementDto>>;

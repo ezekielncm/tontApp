@@ -4,7 +4,7 @@ using Application.Common;
 
 public sealed record CreateVersementCommand(
     Guid TontineId,
-    Guid MemberId,
-    Guid RoundId,
+    Guid PayeurId,
+    Guid TourId,
     decimal Montant,
-    string Currency) : ICommand<Guid>;
+    string Devise = "XOF") : ICommand<Guid>;

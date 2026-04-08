@@ -3,10 +3,10 @@ namespace Application.PaymentManagement.Queries.GetVersementsByRound;
 public sealed record VersementDto(
     Guid Id,
     Guid TontineId,
-    Guid MemberId,
-    Guid RoundId,
+    Guid PayeurId,
+    Guid TourId,
     decimal Montant,
-    string Currency,
+    string Devise,
     string Statut,
     string? ReferenceExterne,
     DateTime CreatedAt,
