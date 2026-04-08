@@ -4,11 +4,15 @@ using Application.TontineManagement.Commands.ActivateTontine;
 using Application.TontineManagement.Commands.AddMember;
 using Application.TontineManagement.Commands.CloturerTour;
 using Application.TontineManagement.Commands.CreateTontine;
+using Application.TontineManagement.Commands.GenererCodeInvitation;
 using Application.TontineManagement.Commands.OuvrirTour;
+using Application.TontineManagement.Commands.RejoindreParCode;
 using Application.TontineManagement.Queries.GetTontineById;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 /// <summary>
 /// Endpoints for managing tontines: creation, members, activation, rounds.
@@ -207,6 +211,82 @@ public class TontineController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Generate an invitation code for a tontine (only when in Draft status).
+    /// The code is stored hashed in the database. The plain-text code and a deep link
+    /// for the mobile app are returned.
+    /// </summary>
+    /// <param name="id">The tontine ID.</param>
+    /// <param name="nombreUsagesMax">Maximum number of times the code can be used (default: 1).</param>
+    /// <param name="expirationJours">Number of days before the code expires (default: 7).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The plain-text code, deep link, and expiration date.</returns>
+    /// <response code="200">Invitation code generated successfully.</response>
+    /// <response code="400">Business rule violation (wrong tontine status).</response>
+    /// <response code="404">Tontine not found.</response>
+    [HttpGet("{id:guid}/invitation/generer")]
+    [ProducesResponseType(typeof(GenererCodeInvitationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GenererCodeInvitation(
+        Guid id,
+        [FromQuery] int nombreUsagesMax = 1,
+        [FromQuery] int expirationJours = 7,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var command = new GenererCodeInvitationCommand(id, nombreUsagesMax, expirationJours);
+            var result = await _mediator.Send(command, cancellationToken);
+            return Ok(new GenererCodeInvitationResponse(result.Code, result.DeepLink, result.Expiration));
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Join a tontine using an invitation code. The tontine must be in Draft status.
+    /// A user cannot join the same tontine twice.
+    /// </summary>
+    /// <param name="request">Invitation code and member details.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>No content on success.</returns>
+    /// <response code="204">Successfully joined the tontine.</response>
+    /// <response code="400">Invalid code, expired code, or business rule violation.</response>
+    [HttpPost("/api/v1/tontines/rejoindre")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RejoindreParCode(
+        [FromBody] RejoindreParCodeRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Extract the authenticated user's ID from the JWT "sub" claim.
+            // JwtService stores the user ID in JwtRegisteredClaimNames.Sub which may be
+            // mapped to ClaimTypes.NameIdentifier by the JWT middleware depending on config.
+            var userIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var utilisateurId))
+                return Unauthorized(new { error = "User identity could not be determined." });
+
+            var command = new RejoindreParCodeCommand(request.Code, request.MemberName, utilisateurId);
+            await _mediator.Send(command, cancellationToken);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }
 
 /// <summary>
@@ -233,3 +313,13 @@ public sealed record AddMemberRequest(string MemberName);
 /// Response after opening a round.
 /// </summary>
 public sealed record OpenRoundResponse(Guid RoundId);
+
+/// <summary>
+/// Response after generating an invitation code.
+/// </summary>
+public sealed record GenererCodeInvitationResponse(string Code, string DeepLink, DateTime Expiration);
+
+/// <summary>
+/// Request body for joining a tontine via invitation code.
+/// </summary>
+public sealed record RejoindreParCodeRequest(string Code, string MemberName);

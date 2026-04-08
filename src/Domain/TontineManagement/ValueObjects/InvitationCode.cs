@@ -1,5 +1,7 @@
 namespace Domain.TontineManagement.ValueObjects;
 
+using System.Security.Cryptography;
+using System.Text;
 using Domain.Common;
 
 public sealed class InvitationCode : ValueObject
@@ -14,13 +16,19 @@ public sealed class InvitationCode : ValueObject
         Value = value;
     }
 
+    /// <summary>
+    /// Generates a cryptographically secure 6-character alphanumeric code.
+    /// Uses System.Security.Cryptography.RandomNumberGenerator instead of Math.Random.
+    /// </summary>
     public static InvitationCode Generate()
     {
-        var random = Random.Shared;
-        var code = string.Create(CodeLength, random, (span, rng) =>
+        Span<byte> randomBytes = stackalloc byte[CodeLength];
+        RandomNumberGenerator.Fill(randomBytes);
+
+        var code = string.Create(CodeLength, randomBytes.ToArray(), static (span, bytes) =>
         {
             for (int i = 0; i < span.Length; i++)
-                span[i] = AllowedChars[rng.Next(AllowedChars.Length)];
+                span[i] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[bytes[i] % 36];
         });
 
         return new InvitationCode(code);
@@ -40,6 +48,17 @@ public sealed class InvitationCode : ValueObject
             throw new ArgumentException("Invitation code must contain only alphanumeric characters.", nameof(code));
 
         return new InvitationCode(normalized);
+    }
+
+    /// <summary>
+    /// Computes a SHA256 hash of the given plain-text invitation code.
+    /// Used to store codes hashed in the database (never in plain text).
+    /// </summary>
+    public static string ComputeHash(string plainCode)
+    {
+        var normalized = plainCode.ToUpperInvariant();
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(normalized));
+        return Convert.ToHexStringLower(hashBytes);
     }
 
     protected override IEnumerable<object?> GetEqualityComponents()

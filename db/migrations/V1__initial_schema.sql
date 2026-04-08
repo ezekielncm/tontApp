@@ -298,6 +298,32 @@ CREATE INDEX ix_rappel_schedules_pending
 CREATE INDEX ix_rappel_schedules_tour ON rappel_schedules (tour_id) WHERE deleted_at IS NULL;
 
 -- ============================================================================
+-- 10b. codes_invitation  (Bounded Context: Tontine)
+-- ============================================================================
+CREATE TABLE codes_invitation (
+    id                      UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    tontine_id              UUID        NOT NULL,
+    code_hash               VARCHAR(64) NOT NULL,
+    date_expiration         TIMESTAMPTZ NOT NULL,
+    nombre_usages_max       INT         NOT NULL DEFAULT 1,
+    nombre_usages_actuels   INT         NOT NULL DEFAULT 0,
+    created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
+    created_by              UUID,
+    deleted_at              TIMESTAMPTZ,
+
+    CONSTRAINT fk_codes_invitation_tontine FOREIGN KEY (tontine_id) REFERENCES tontines (id),
+    CONSTRAINT ck_codes_invitation_usages_max CHECK (nombre_usages_max >= 1),
+    CONSTRAINT ck_codes_invitation_usages_actuels CHECK (nombre_usages_actuels >= 0),
+    CONSTRAINT ck_codes_invitation_usages CHECK (nombre_usages_actuels <= nombre_usages_max)
+);
+
+-- Index: fast lookup by code hash (join flow)
+CREATE INDEX ix_codes_invitation_code_hash ON codes_invitation (code_hash) WHERE deleted_at IS NULL;
+-- Index: invitations per tontine
+CREATE INDEX ix_codes_invitation_tontine ON codes_invitation (tontine_id) WHERE deleted_at IS NULL;
+
+-- ============================================================================
 -- 11. profils_credit  (Bounded Context: CreditScoring)
 -- ============================================================================
 CREATE TABLE profils_credit (

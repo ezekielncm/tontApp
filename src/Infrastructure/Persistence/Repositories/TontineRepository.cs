@@ -1,6 +1,7 @@
 namespace Infrastructure.Persistence.Repositories;
 
 using Domain.TontineManagement;
+using Domain.TontineManagement.Entities;
 using Domain.TontineManagement.Repositories;
 using Domain.TontineManagement.ValueObjects;
 using Microsoft.EntityFrameworkCore;
@@ -54,6 +55,18 @@ internal sealed class TontineRepository : ITontineRepository
             .Include(RoundsNavigation)
             .Where(t => t.Status == status)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Tontine?> GetByInvitationCodeHashAsync(string codeHash, CancellationToken cancellationToken = default)
+    {
+        // Query tontines that have an invitation with the matching code hash
+        return await _dbContext.Tontines
+            .Include(MembersNavigation)
+            .Include(RoundsNavigation)
+            .Include(InvitationsNavigation)
+            .Where(t => _dbContext.Set<Invitation>()
+                .Any(i => EF.Property<Guid>(i, "tontine_id") == t.Id.Value && i.CodeHash == codeHash))
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task AddAsync(Tontine tontine, CancellationToken cancellationToken = default)

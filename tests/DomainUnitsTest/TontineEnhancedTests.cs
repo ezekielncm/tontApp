@@ -1,3 +1,4 @@
+using Domain.IdentityManagement.ValueObjects;
 using Domain.TontineManagement;
 using Domain.TontineManagement.Entities;
 using Domain.TontineManagement.Events;
@@ -41,11 +42,12 @@ public class TontineEnhancedTests
         var tontine = CreateDefaultTontine();
         tontine.ClearDomainEvents();
 
-        var invitation = tontine.GenerateInvitation();
+        var (invitation, plainCode) = tontine.GenerateInvitation();
 
         Assert.Single(tontine.Invitations);
-        Assert.NotNull(invitation.Code);
-        Assert.False(invitation.IsUsed);
+        Assert.NotNull(plainCode);
+        Assert.Equal(6, plainCode.Length);
+        Assert.Equal(0, invitation.NombreUsagesActuels);
         var domainEvent = Assert.Single(tontine.DomainEvents);
         Assert.IsType<InvitationGeneratedEvent>(domainEvent);
     }
@@ -67,13 +69,15 @@ public class TontineEnhancedTests
     {
         var tontine = CreateDefaultTontine();
         tontine.AddMember("Alice");
-        var invitation = tontine.GenerateInvitation();
+        var (_, plainCode) = tontine.GenerateInvitation();
         tontine.ClearDomainEvents();
 
-        var member = tontine.JoinWithInvitation("Bob", invitation.Code.ToString());
+        var userId = UtilisateurId.Create();
+        var member = tontine.JoinWithInvitation("Bob", plainCode, userId);
 
         Assert.Equal("Bob", member.Name);
         Assert.Equal(2, tontine.Members.Count);
+        Assert.Equal(userId, member.UtilisateurId);
     }
 
     [Fact]
@@ -81,9 +85,9 @@ public class TontineEnhancedTests
     {
         var tontine = CreateDefaultTontine();
         tontine.AddMember("Alice");
-        var invitation = tontine.GenerateInvitation();
+        var (_, plainCode) = tontine.GenerateInvitation();
 
-        var member = tontine.JoinWithInvitation("Bob", invitation.Code.ToString());
+        var member = tontine.JoinWithInvitation("Bob", plainCode, UtilisateurId.Create());
 
         Assert.Equal(2, member.Rang);
     }
@@ -95,18 +99,44 @@ public class TontineEnhancedTests
         tontine.GenerateInvitation();
 
         Assert.Throws<InvalidOperationException>(() =>
-            tontine.JoinWithInvitation("Bob", "ZZZZZZ"));
+            tontine.JoinWithInvitation("Bob", "ZZZZZZ", UtilisateurId.Create()));
     }
 
     [Fact]
     public void JoinWithInvitation_WithUsedSingleUseCode_ThrowsInvalidOperationException()
     {
         var tontine = CreateDefaultTontine();
-        var invitation = tontine.GenerateInvitation(isMultipleUse: false);
-        tontine.JoinWithInvitation("Alice", invitation.Code.ToString());
+        var (_, plainCode) = tontine.GenerateInvitation(nombreUsagesMax: 1);
+        tontine.JoinWithInvitation("Alice", plainCode, UtilisateurId.Create());
 
         Assert.Throws<InvalidOperationException>(() =>
-            tontine.JoinWithInvitation("Bob", invitation.Code.ToString()));
+            tontine.JoinWithInvitation("Bob", plainCode, UtilisateurId.Create()));
+    }
+
+    [Fact]
+    public void JoinWithInvitation_SameUserCannotJoinTwice()
+    {
+        var tontine = CreateDefaultTontine();
+        var (_, plainCode) = tontine.GenerateInvitation(nombreUsagesMax: 5);
+        var userId = UtilisateurId.Create();
+        tontine.JoinWithInvitation("Alice", plainCode, userId);
+
+        Assert.Throws<InvalidOperationException>(() =>
+            tontine.JoinWithInvitation("Bob", plainCode, userId));
+    }
+
+    [Fact]
+    public void JoinWithInvitation_MultiUseCode_AllowsMultipleJoins()
+    {
+        var tontine = CreateDefaultTontine();
+        var (invitation, plainCode) = tontine.GenerateInvitation(nombreUsagesMax: 3);
+
+        tontine.JoinWithInvitation("Alice", plainCode, UtilisateurId.Create());
+        tontine.JoinWithInvitation("Bob", plainCode, UtilisateurId.Create());
+
+        Assert.Equal(2, tontine.Members.Count);
+        Assert.Equal(2, invitation.NombreUsagesActuels);
+        Assert.True(invitation.IsValid()); // Still valid (2 < 3)
     }
 
     [Fact]
@@ -252,6 +282,23 @@ public class MemberEnhancedTests
 
         Assert.Equal(3, member.Rang);
     }
+
+    [Fact]
+    public void Create_WithUtilisateurId_SetsUtilisateurId()
+    {
+        var userId = UtilisateurId.Create();
+        var member = Member.Create("Alice", 1, userId);
+
+        Assert.Equal(userId, member.UtilisateurId);
+    }
+
+    [Fact]
+    public void Create_WithoutUtilisateurId_HasNullUtilisateurId()
+    {
+        var member = Member.Create("Alice");
+
+        Assert.Null(member.UtilisateurId);
+    }
 }
 
 public class InvitationCodeTests
@@ -263,6 +310,44 @@ public class InvitationCodeTests
 
         Assert.Equal(6, code.Value.Length);
         Assert.True(code.Value.All(c => char.IsLetterOrDigit(c)));
+    }
+
+    [Fact]
+    public void Generate_UsesCryptoRandom_ProducesDifferentCodes()
+    {
+        // Generate multiple codes and ensure they are not all the same
+        var codes = Enumerable.Range(0, 10)
+            .Select(_ => InvitationCode.Generate().Value)
+            .ToHashSet();
+
+        Assert.True(codes.Count > 1, "Expected cryptographic random to produce different codes.");
+    }
+
+    [Fact]
+    public void ComputeHash_ProducesConsistentHash()
+    {
+        var hash1 = InvitationCode.ComputeHash("ABC123");
+        var hash2 = InvitationCode.ComputeHash("ABC123");
+
+        Assert.Equal(hash1, hash2);
+    }
+
+    [Fact]
+    public void ComputeHash_IsCaseInsensitive()
+    {
+        var hash1 = InvitationCode.ComputeHash("abc123");
+        var hash2 = InvitationCode.ComputeHash("ABC123");
+
+        Assert.Equal(hash1, hash2);
+    }
+
+    [Fact]
+    public void ComputeHash_DifferentCodes_ProduceDifferentHashes()
+    {
+        var hash1 = InvitationCode.ComputeHash("ABC123");
+        var hash2 = InvitationCode.ComputeHash("XYZ789");
+
+        Assert.NotEqual(hash1, hash2);
     }
 
     [Fact]
@@ -311,30 +396,51 @@ public class InvitationTests
     [Fact]
     public void IsValid_BeforeExpiry_ReturnsTrue()
     {
-        var invitation = Invitation.Create();
+        var (invitation, _) = Invitation.Create();
 
         Assert.True(invitation.IsValid());
     }
 
     [Fact]
-    public void IsValid_AfterMarkUsed_SingleUse_ReturnsFalse()
+    public void IsValid_AfterIncrementUsage_SingleUse_ReturnsFalse()
     {
-        var invitation = Invitation.Create(isMultipleUse: false);
+        var (invitation, _) = Invitation.Create(nombreUsagesMax: 1);
 
-        invitation.MarkUsed();
+        invitation.IncrementUsage();
 
         Assert.False(invitation.IsValid());
     }
 
     [Fact]
-    public void MultiUse_StaysValidAfterMarkUsed()
+    public void MultiUse_StaysValidAfterIncrementUsage()
     {
-        var invitation = Invitation.Create(isMultipleUse: true);
+        var (invitation, _) = Invitation.Create(nombreUsagesMax: 3);
 
-        invitation.MarkUsed();
+        invitation.IncrementUsage();
 
         Assert.True(invitation.IsValid());
-        Assert.False(invitation.IsUsed);
+        Assert.Equal(1, invitation.NombreUsagesActuels);
+    }
+
+    [Fact]
+    public void MultiUse_ReachesMaxUsage_BecomesInvalid()
+    {
+        var (invitation, _) = Invitation.Create(nombreUsagesMax: 2);
+
+        invitation.IncrementUsage();
+        invitation.IncrementUsage();
+
+        Assert.False(invitation.IsValid());
+        Assert.Equal(2, invitation.NombreUsagesActuels);
+    }
+
+    [Fact]
+    public void IncrementUsage_BeyondMax_ThrowsInvalidOperationException()
+    {
+        var (invitation, _) = Invitation.Create(nombreUsagesMax: 1);
+        invitation.IncrementUsage();
+
+        Assert.Throws<InvalidOperationException>(() => invitation.IncrementUsage());
     }
 
     [Fact]
@@ -342,24 +448,82 @@ public class InvitationTests
     {
         var before = DateTime.UtcNow;
 
-        var invitation = Invitation.Create();
+        var (invitation, _) = Invitation.Create();
 
         Assert.True(invitation.ExpiresAt > before);
     }
 
     [Fact]
-    public void Create_SingleUse_IsNotMultipleUse()
+    public void Create_SetsExpirationDays()
     {
-        var invitation = Invitation.Create(isMultipleUse: false);
+        var before = DateTime.UtcNow;
 
-        Assert.False(invitation.IsMultipleUse);
+        var (invitation, _) = Invitation.Create(expirationDays: 14);
+
+        Assert.True(invitation.ExpiresAt > before.AddDays(13));
+        Assert.True(invitation.ExpiresAt <= before.AddDays(15));
     }
 
     [Fact]
-    public void Create_MultipleUse_IsMultipleUse()
+    public void Create_SingleUse_HasNombreUsagesMaxOne()
     {
-        var invitation = Invitation.Create(isMultipleUse: true);
+        var (invitation, _) = Invitation.Create(nombreUsagesMax: 1);
 
-        Assert.True(invitation.IsMultipleUse);
+        Assert.Equal(1, invitation.NombreUsagesMax);
+        Assert.Equal(0, invitation.NombreUsagesActuels);
+    }
+
+    [Fact]
+    public void Create_MultipleUse_HasCorrectNombreUsagesMax()
+    {
+        var (invitation, _) = Invitation.Create(nombreUsagesMax: 10);
+
+        Assert.Equal(10, invitation.NombreUsagesMax);
+        Assert.Equal(0, invitation.NombreUsagesActuels);
+    }
+
+    [Fact]
+    public void Create_ReturnsPlainCode()
+    {
+        var (_, plainCode) = Invitation.Create();
+
+        Assert.NotNull(plainCode);
+        Assert.Equal(6, plainCode.Length);
+        Assert.True(plainCode.All(c => char.IsLetterOrDigit(c)));
+    }
+
+    [Fact]
+    public void Create_StoresHashNotPlainCode()
+    {
+        var (invitation, plainCode) = Invitation.Create();
+
+        // The CodeHash should NOT equal the plain code
+        Assert.NotEqual(plainCode, invitation.CodeHash);
+        // The CodeHash should match the computed hash
+        Assert.Equal(InvitationCode.ComputeHash(plainCode), invitation.CodeHash);
+    }
+
+    [Fact]
+    public void MatchesCode_WithCorrectCode_ReturnsTrue()
+    {
+        var (invitation, plainCode) = Invitation.Create();
+
+        Assert.True(invitation.MatchesCode(plainCode));
+    }
+
+    [Fact]
+    public void MatchesCode_WithWrongCode_ReturnsFalse()
+    {
+        var (invitation, _) = Invitation.Create();
+
+        Assert.False(invitation.MatchesCode("ZZZZZZ"));
+    }
+
+    [Fact]
+    public void MatchesCode_IsCaseInsensitive()
+    {
+        var (invitation, plainCode) = Invitation.Create();
+
+        Assert.True(invitation.MatchesCode(plainCode.ToLowerInvariant()));
     }
 }
