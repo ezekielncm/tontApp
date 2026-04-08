@@ -15,8 +15,20 @@ public abstract class AggregateRoot<TId> : Entity<TId> where TId : notnull
         _domainEvents.Add(domainEvent);
     }
 
+    public void RemoveDomainEvent(IDomainEvent domainEvent)
+    {
+        _domainEvents.Remove(domainEvent);
+    }
+
     public void ClearDomainEvents()
     {
         _domainEvents.Clear();
+    }
+
+    public IReadOnlyCollection<IDomainEvent> PopDomainEvents()
+    {
+        var events = _domainEvents.ToList().AsReadOnly();
+        _domainEvents.Clear();
+        return events;
     }
 }
