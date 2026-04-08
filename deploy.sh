@@ -13,6 +13,7 @@ ENV_FILE="${APP_DIR}/.env"
 HEALTH_URL="http://localhost:${API_PORT:-8080}/health"
 MAX_RETRIES=10
 RETRY_INTERVAL=6
+IMAGE_PRUNE_AGE="168h"  # Remove unused images older than 7 days
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 log()  { echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"; }
@@ -93,6 +94,6 @@ fi
 
 # ── Cleanup ──────────────────────────────────────────────────────────────────
 log "Cleaning up unused images..."
-docker image prune -f --filter "until=168h" 2>/dev/null || true
+docker image prune -f --filter "until=${IMAGE_PRUNE_AGE}" 2>/dev/null || true
 
 log "Deployment successful! Image: ${NEW_TAG}"
