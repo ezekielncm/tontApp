@@ -82,12 +82,11 @@ internal sealed class TontineRepository : ITontineRepository
 
     public async Task<int> CountByGestionnaireAsync(string gestionnaireId, CancellationToken cancellationToken = default)
     {
-        // Count non-cancelled tontines for a gestionnaire
-        // This uses a simple approach: count all tontines where the gestionnaire
-        // is associated via the billing system. For now, count all non-cancelled tontines.
-        // In a full implementation, tontines would have a CreatedBy field.
-        return await _dbContext.Tontines
-            .Where(t => t.Status != TontineStatus.Cancelled)
-            .CountAsync(cancellationToken);
+        // NOTE: The Tontine aggregate does not currently have a CreatedBy/GestionnaireId field.
+        // The Redis-based billing cache (BillingCacheService) tracks per-user tontine counts
+        // authoritatively. This DB fallback returns 0 as a safe default for MVP.
+        // A future migration should add a created_by column to the tontines table.
+        await Task.CompletedTask;
+        return 0;
     }
 }

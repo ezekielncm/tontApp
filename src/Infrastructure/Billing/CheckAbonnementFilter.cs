@@ -108,8 +108,9 @@ public sealed class CheckAbonnementFilter : Attribute, IAsyncActionFilter
         // Execute the action
         var result = await next();
 
-        // If the action succeeded (tontine created), increment the counter
-        if (result.Exception is null && context.HttpContext.Response.StatusCode < 400)
+        // If the action succeeded and returned a 201 Created (tontine was actually created),
+        // increment the counter
+        if (result.Exception is null && context.HttpContext.Response.StatusCode == 201)
         {
             await billingCache.IncrementTontineCountAsync(userId);
         }

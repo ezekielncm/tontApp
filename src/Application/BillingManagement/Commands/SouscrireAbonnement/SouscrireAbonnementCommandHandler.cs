@@ -64,7 +64,7 @@ public sealed class SouscrireAbonnementCommandHandler
                 request.NumeroTelephone,
                 plan.PrixMensuel,
                 plan.Devise,
-                $"ABO-{request.GestionnaireId[..Math.Min(8, request.GestionnaireId.Length)]}-{DateTime.UtcNow:yyyyMMddHHmmss}");
+                $"ABO-{request.GestionnaireId[..Math.Min(8, request.GestionnaireId.Length)]}-{Guid.NewGuid():N}"[..50]);
 
             var paymentResponse = await _mobileMoneyGateway.InitierPaiementAsync(
                 paymentRequest, cancellationToken);

@@ -5,6 +5,9 @@ using Domain.BillingManagement;
 using Domain.BillingManagement.Repositories;
 using Domain.BillingManagement.ValueObjects;
 using Domain.Common;
+using Domain.IdentityManagement;
+using Domain.IdentityManagement.Repositories;
+using Domain.IdentityManagement.ValueObjects;
 using Domain.NotificationManagement.ValueObjects;
 using Domain.PaymentManagement.Ports;
 using Microsoft.Extensions.Logging;
@@ -76,6 +79,7 @@ public sealed class RenouvellementAbonnementJob
 {
     private readonly IAbonnementRepository _abonnementRepository;
     private readonly IPlanAbonnementRepository _planRepository;
+    private readonly IUtilisateurRepository _utilisateurRepository;
     private readonly IMobileMoneyGateway _mobileMoneyGateway;
     private readonly INotificationService _notificationService;
     private readonly IUnitOfWork _unitOfWork;
@@ -84,6 +88,7 @@ public sealed class RenouvellementAbonnementJob
     public RenouvellementAbonnementJob(
         IAbonnementRepository abonnementRepository,
         IPlanAbonnementRepository planRepository,
+        IUtilisateurRepository utilisateurRepository,
         IMobileMoneyGateway mobileMoneyGateway,
         INotificationService notificationService,
         IUnitOfWork unitOfWork,
@@ -91,6 +96,7 @@ public sealed class RenouvellementAbonnementJob
     {
         _abonnementRepository = abonnementRepository;
         _planRepository = planRepository;
+        _utilisateurRepository = utilisateurRepository;
         _mobileMoneyGateway = mobileMoneyGateway;
         _notificationService = notificationService;
         _unitOfWork = unitOfWork;
@@ -134,11 +140,31 @@ public sealed class RenouvellementAbonnementJob
 
     private async Task AttemptRenewalAsync(Abonnement abonnement, CancellationToken cancellationToken)
     {
-        var reference = $"RENEW-{abonnement.Id.Value:N}-{DateTime.UtcNow:yyyyMMdd}";
+        var reference = $"RENEW-{abonnement.Id.Value:N}-{Guid.NewGuid():N}"[..50];
+
+        // Look up the gestionnaire's phone number from user profile
+        Utilisateur? utilisateur = null;
+        if (Guid.TryParse(abonnement.GestionnaireId, out var userId))
+        {
+            utilisateur = await _utilisateurRepository.GetByIdAsync(
+                UtilisateurId.From(userId), cancellationToken);
+        }
+
+        if (utilisateur is null)
+        {
+            _logger.LogWarning(
+                "RenouvellementAbonnementJob: could not find user profile for gestionnaire {GestionnaireId}, entering grace period",
+                abonnement.GestionnaireId);
+
+            abonnement.PasserEnGrace();
+            await _abonnementRepository.UpdateAsync(abonnement, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            return;
+        }
 
         // Attempt Orange Money debit
         var paymentRequest = new MobileMoneyRequest(
-            abonnement.GestionnaireId, // In real impl, would need phone from user profile
+            utilisateur.Telephone.Value,
             abonnement.MontantMensuel,
             abonnement.Currency,
             reference);
