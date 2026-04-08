@@ -2,13 +2,27 @@ using Domain.CreditScoringManagement;
 using Domain.CreditScoringManagement.Entities;
 using Domain.CreditScoringManagement.Ports;
 using Domain.CreditScoringManagement.ValueObjects;
-using Infrastructure.CreditScoring;
 
 namespace DomainUnitsTest;
 
+/// <summary>
+/// Test-only scoring engine using the same v1 formula.
+/// Avoids referencing Infrastructure from Domain unit tests.
+/// </summary>
+internal sealed class TestScoringEngine : IScoringEngine
+{
+    public ScoreCalcule Calculer(HistoriqueComportement historique)
+    {
+        return ScoreCalcule.Create(
+            historique.CyclesCompletes,
+            historique.CalculerTauxPonctualite(),
+            historique.CalculerAncienneteEnMois());
+    }
+}
+
 public class CreditScoringTests
 {
-    private readonly IScoringEngine _scoringEngine = new RegleMetierScoringEngine();
+    private readonly IScoringEngine _scoringEngine = new TestScoringEngine();
 
     /// <summary>
     /// Helper to create HistoriqueComportement with specific values for testing.

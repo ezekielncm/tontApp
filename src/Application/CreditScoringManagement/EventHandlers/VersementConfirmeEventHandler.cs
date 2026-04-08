@@ -47,11 +47,14 @@ public sealed class VersementConfirmeEventHandler : INotificationHandler<Verseme
         if (profil is null)
         {
             profil = ProfilCredit.Create(membreId);
+            // TODO: Determine punctuality based on payment deadline (tour.DateCloture).
+            // Currently defaults to punctual since VersementConfirmedEvent doesn't carry deadline info.
             profil.EnregistrerVersementConfirme(estPonctuel: true, _scoringEngine);
             await _profilCreditRepository.AddAsync(profil, cancellationToken);
         }
         else
         {
+            // TODO: Determine punctuality based on payment deadline (tour.DateCloture).
             profil.EnregistrerVersementConfirme(estPonctuel: true, _scoringEngine);
             await _profilCreditRepository.UpdateAsync(profil, cancellationToken);
         }
