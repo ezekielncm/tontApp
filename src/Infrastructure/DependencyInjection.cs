@@ -5,11 +5,13 @@ using Domain.BillingManagement.Repositories;
 using Domain.Common;
 using Domain.IdentityManagement.Repositories;
 using Domain.NotificationManagement.Repositories;
+using Domain.PaymentManagement.Ports;
 using Domain.PaymentManagement.Repositories;
 using Domain.TontineManagement.Repositories;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Infrastructure.Auth;
+using Infrastructure.Payment;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +37,21 @@ public static class DependencyInjection
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IUtilisateurRepository, UtilisateurRepository>();
         services.AddScoped<IAbonnementRepository, AbonnementRepository>();
+
+        // Africa's Talking / Orange Money configuration
+        services.Configure<AfricasTalkingOptions>(
+            configuration.GetSection(AfricasTalkingOptions.SectionName));
+
+        services.AddHttpClient<IMobileMoneyGateway, OrangeMoneyAdapter>((sp, client) =>
+        {
+            var options = configuration.GetSection(AfricasTalkingOptions.SectionName)
+                .Get<AfricasTalkingOptions>() ?? new AfricasTalkingOptions();
+
+            client.BaseAddress = new Uri(options.BaseUrl);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.DefaultRequestHeaders.Add("apiKey", options.ApiKey);
+            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+        });
 
         // Redis – connection multiplexer (singleton) + distributed cache
         var redisConnectionString = configuration.GetConnectionString("Redis") ?? "localhost:6379";

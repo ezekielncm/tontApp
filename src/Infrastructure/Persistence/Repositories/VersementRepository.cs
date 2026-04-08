@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 internal sealed class VersementRepository : IVersementRepository
 {
+    private const string AuditTrailNavigation = "_auditTrail";
     private readonly TontineDbContext _dbContext;
 
     public VersementRepository(TontineDbContext dbContext)
@@ -18,12 +19,14 @@ internal sealed class VersementRepository : IVersementRepository
     public async Task<Versement?> GetByIdAsync(VersementId id, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Versements
+            .Include(AuditTrailNavigation)
             .FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
     }
 
     public async Task<Versement?> GetByReferenceExterneAsync(string referenceExterne, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Versements
+            .Include(AuditTrailNavigation)
             .FirstOrDefaultAsync(v => v.ReferenceExterne == referenceExterne, cancellationToken);
     }
 
@@ -39,7 +42,9 @@ internal sealed class VersementRepository : IVersementRepository
         TontineId tontineId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Versements
+            .Include(AuditTrailNavigation)
             .Where(v => v.TontineId == tontineId)
+            .OrderBy(v => v.CreatedAt)
             .ToListAsync(cancellationToken);
     }
 
