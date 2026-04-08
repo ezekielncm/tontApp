@@ -34,6 +34,22 @@ public static class SmsTemplate
     public static string Bienvenue(string nomTontine)
         => Truncate($"TontinesApp: Bienvenue dans la tontine {nomTontine}! Bonne epargne avec votre groupe.");
 
+    /// <summary>Confirmation d'abonnement</summary>
+    public static string ConfirmationAbonnement(string plan, decimal montant, string devise)
+        => Truncate($"TontinesApp: Abonnement {plan} active! Montant: {montant} {devise}/mois. Merci de votre confiance.");
+
+    /// <summary>Rappel de renouvellement J-3</summary>
+    public static string RappelRenouvellement(string plan, decimal montant, string devise, DateTime dateFin)
+        => Truncate($"TontinesApp: Votre abonnement {plan} expire le {dateFin:dd/MM}. Renouvellement: {montant} {devise}.");
+
+    /// <summary>Renouvellement réussi</summary>
+    public static string RenouvellementReussi(string plan, DateTime nouvelleDateFin)
+        => Truncate($"TontinesApp: Abonnement {plan} renouvele jusqu'au {nouvelleDateFin:dd/MM/yyyy}. Merci!");
+
+    /// <summary>Échec de renouvellement</summary>
+    public static string RenouvellementEchoue(string plan)
+        => Truncate($"TontinesApp: Echec du renouvellement {plan}. Verifiez votre solde. Grace de 3 jours accordee.");
+
     private static string Truncate(string message)
         => message.Length > ContenuMessage.MaxLength
             ? message[..ContenuMessage.MaxLength]

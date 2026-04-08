@@ -24,7 +24,38 @@ internal sealed class AbonnementRepository : IAbonnementRepository
         string gestionnaireId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Abonnements
-            .FirstOrDefaultAsync(a => a.GestionnaireId == gestionnaireId, cancellationToken);
+            .Where(a => a.GestionnaireId == gestionnaireId)
+            .OrderByDescending(a => a.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Abonnement>> GetExpiringAsync(
+        DateTime beforeDate, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Abonnements
+            .Where(a => a.Statut == StatutAbonnement.Actif
+                && a.Plan != PlanTarifaire.Gratuit
+                && a.DateFin <= beforeDate
+                && a.RenouvellementAuto)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Abonnement>> GetInGraceAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Abonnements
+            .Where(a => a.Statut == StatutAbonnement.EnGrace
+                && a.DateFinGrace.HasValue
+                && a.DateFinGrace.Value <= DateTime.UtcNow)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Abonnement>> GetActiveByPlanAsync(
+        PlanTarifaire plan, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Abonnements
+            .Where(a => a.Plan == plan && a.Statut == StatutAbonnement.Actif)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task AddAsync(Abonnement abonnement, CancellationToken cancellationToken = default)

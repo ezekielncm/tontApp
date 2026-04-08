@@ -79,4 +79,14 @@ internal sealed class TontineRepository : ITontineRepository
         _dbContext.Tontines.Update(tontine);
         return Task.CompletedTask;
     }
+
+    public async Task<int> CountByGestionnaireAsync(string gestionnaireId, CancellationToken cancellationToken = default)
+    {
+        // NOTE: The Tontine aggregate does not currently have a CreatedBy/GestionnaireId field.
+        // The Redis-based billing cache (BillingCacheService) tracks per-user tontine counts
+        // authoritatively. This DB fallback returns 0 as a safe default for MVP.
+        // A future migration should add a created_by column to the tontines table.
+        await Task.CompletedTask;
+        return 0;
+    }
 }

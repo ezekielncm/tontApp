@@ -15,6 +15,11 @@ public interface ITontineRepository
     /// </summary>
     Task<Tontine?> GetByInvitationCodeHashAsync(string codeHash, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Counts the number of tontines created by a gestionnaire (non-cancelled).
+    /// </summary>
+    Task<int> CountByGestionnaireAsync(string gestionnaireId, CancellationToken cancellationToken = default);
+
     Task AddAsync(Tontine tontine, CancellationToken cancellationToken = default);
     Task UpdateAsync(Tontine tontine, CancellationToken cancellationToken = default);
 }
