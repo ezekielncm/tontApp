@@ -144,9 +144,11 @@ export function GestionnaireScreen({
             setIsClosingTour(true);
             try {
               await tontineService.cloreTour(tontineId, tourId);
-              // Invalidate tontine detail cache
               await queryClient.invalidateQueries({
                 queryKey: ['tontine', tontineId],
+              });
+              await queryClient.invalidateQueries({
+                queryKey: ['retardataires', tontineId, tourId],
               });
               Alert.alert(
                 'Tour clôturé',

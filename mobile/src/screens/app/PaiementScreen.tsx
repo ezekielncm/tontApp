@@ -18,7 +18,6 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../../navigation/types';
-import type { VersementStatut } from '../../types/api';
 import { paymentService } from '../../services/paymentService';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ErrorBanner } from '../../components/ErrorBanner';
@@ -26,13 +25,12 @@ import { ProgressBar } from '../../components/ProgressBar';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import { formatMontant } from '../../utils/format';
 import { colors, spacing, fontSizes, borderRadius } from '../../config/theme';
+import {
+  PAYMENT_POLL_INTERVAL_MS,
+  PAYMENT_MAX_POLL_DURATION_MS,
+} from '../../config/constants';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'Paiement'>;
-
-/** Polling interval in ms */
-const POLL_INTERVAL_MS = 5_000;
-/** Maximum polling duration in ms (2 minutes) */
-const MAX_POLL_DURATION_MS = 2 * 60 * 1_000;
 
 type PaymentPhase = 'idle' | 'initiating' | 'polling' | 'success' | 'failure' | 'timeout';
 
@@ -47,6 +45,7 @@ export function PaiementScreen({ route, navigation }: Props): React.JSX.Element 
 
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollStartRef = useRef<number>(0);
+  const isPollingRef = useRef(false);
 
   // Cleanup polling on unmount
   useEffect(() => {
@@ -62,6 +61,7 @@ export function PaiementScreen({ route, navigation }: Props): React.JSX.Element 
       clearInterval(pollTimerRef.current);
       pollTimerRef.current = null;
     }
+    isPollingRef.current = false;
   }, []);
 
   const startPolling = useCallback(
@@ -70,11 +70,15 @@ export function PaiementScreen({ route, navigation }: Props): React.JSX.Element 
       setPollProgress(0);
 
       pollTimerRef.current = setInterval(async () => {
+        // Guard against concurrent poll requests
+        if (isPollingRef.current) return;
+        isPollingRef.current = true;
+
         const elapsed = Date.now() - pollStartRef.current;
-        const progress = Math.min(elapsed / MAX_POLL_DURATION_MS, 1);
+        const progress = Math.min(elapsed / PAYMENT_MAX_POLL_DURATION_MS, 1);
         setPollProgress(progress);
 
-        if (elapsed >= MAX_POLL_DURATION_MS) {
+        if (elapsed >= PAYMENT_MAX_POLL_DURATION_MS) {
           stopPolling();
           setPhase('timeout');
           return;
@@ -93,8 +97,10 @@ export function PaiementScreen({ route, navigation }: Props): React.JSX.Element 
           // 'en_attente' → keep polling
         } catch {
           // Transient error during poll — keep polling
+        } finally {
+          isPollingRef.current = false;
         }
-      }, POLL_INTERVAL_MS);
+      }, PAYMENT_POLL_INTERVAL_MS);
     },
     [stopPolling],
   );
@@ -247,6 +253,8 @@ export function PaiementScreen({ route, navigation }: Props): React.JSX.Element 
           <Text style={styles.timeoutText}>
             La confirmation n&apos;a pas été reçue dans les 2 minutes.
             Votre paiement est peut-être encore en cours de traitement.
+            Veuillez vérifier votre solde Orange Money ou contactez le support
+            si le montant a été débité.
           </Text>
           <PrimaryButton
             title="Réessayer"

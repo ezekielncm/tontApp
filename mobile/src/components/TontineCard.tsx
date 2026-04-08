@@ -14,6 +14,7 @@ import {
   fontSizes,
   borderRadius,
 } from '../config/theme';
+import { URGENCY_THRESHOLD_DAYS } from '../config/constants';
 
 interface TontineCardProps {
   /** Tontine summary data */
@@ -30,7 +31,7 @@ export function TontineCard({
     tontine.tourActuel?.dateCloture
       ? daysUntil(tontine.tourActuel.dateCloture)
       : null;
-  const isUrgent = daysRemaining !== null && daysRemaining <= 3 && daysRemaining > 0;
+  const isUrgent = daysRemaining !== null && daysRemaining <= URGENCY_THRESHOLD_DAYS && daysRemaining > 0;
   const isExpired = daysRemaining === 0 && tontine.tourActuel?.dateCloture != null;
 
   return (

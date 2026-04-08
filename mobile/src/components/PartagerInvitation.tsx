@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import { colors, spacing, fontSizes, borderRadius } from '../config/theme';
+import { formatMontant } from '../utils/format';
 
 interface PartagerInvitationProps {
   /** Name of the tontine */
@@ -23,30 +24,19 @@ interface PartagerInvitationProps {
   invitationCode: string;
   /** Cotisation amount */
   montant: number;
-  /** Currency */
-  devise?: string;
-}
-
-/**
- * Format amount with thousands separator and FCFA.
- * Duplicated here to avoid circular imports in standalone usage.
- */
-function formatAmount(amount: number): string {
-  return `${Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} FCFA`;
 }
 
 export function PartagerInvitation({
   tontineNom,
   invitationCode,
   montant,
-  devise = 'FCFA',
 }: PartagerInvitationProps): React.JSX.Element {
   const [isSharing, setIsSharing] = useState(false);
 
   const message = [
     `🤝 Rejoins notre tontine "${tontineNom}" !`,
     '',
-    `💰 Cotisation : ${formatAmount(montant)}`,
+    `💰 Cotisation : ${formatMontant(montant)}`,
     `📲 Code d'invitation : ${invitationCode}`,
     '',
     `Télécharge l'app TontinesApp et utilise ce code pour rejoindre le groupe.`,

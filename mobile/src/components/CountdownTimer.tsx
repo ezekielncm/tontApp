@@ -7,6 +7,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, spacing, fontSizes, borderRadius } from '../config/theme';
+import { URGENCY_THRESHOLD_DAYS } from '../config/constants';
 import { timeRemaining } from '../utils/format';
 
 interface CountdownTimerProps {
@@ -36,7 +37,7 @@ export function CountdownTimer({
 
   const pad = (n: number): string => n.toString().padStart(2, '0');
 
-  const isUrgent = !remaining.isExpired && remaining.totalSeconds <= 3 * 24 * 3600;
+  const isUrgent = !remaining.isExpired && remaining.totalSeconds <= URGENCY_THRESHOLD_DAYS * 24 * 3600;
 
   return (
     <View
