@@ -166,16 +166,23 @@ internal sealed partial class AfricasTalkingSmsAdapter : ISmsGateway
     [GeneratedRegex(@"^\+[1-9]\d{1,14}$", RegexOptions.Compiled)]
     private static partial Regex GenerateE164Regex();
 
-    private sealed record AfricasTalkingSmsResponse(AfricasTalkingSmsMessageData? SMSMessageData);
+    private sealed class AfricasTalkingSmsResponse
+    {
+        public AfricasTalkingSmsMessageData? SMSMessageData { get; set; }
+    }
 
-    private sealed record AfricasTalkingSmsMessageData(
-        string? Message,
-        List<AfricasTalkingSmsRecipient>? Recipients);
+    private sealed class AfricasTalkingSmsMessageData
+    {
+        public string? Message { get; set; }
+        public List<AfricasTalkingSmsRecipient>? Recipients { get; set; }
+    }
 
-    private sealed record AfricasTalkingSmsRecipient(
-        string? StatusCode,
-        string? Number,
-        string? Status,
-        string? Cost,
-        string? MessageId);
+    private sealed class AfricasTalkingSmsRecipient
+    {
+        public int StatusCode { get; set; }
+        public string? Number { get; set; }
+        public string? Status { get; set; }
+        public string? Cost { get; set; }
+        public string? MessageId { get; set; }
+    }
 }
