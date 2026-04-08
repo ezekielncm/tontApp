@@ -1,10 +1,12 @@
 ﻿namespace Infrastructure;
 
+using Application.NotificationManagement.Services;
 using Application.IdentityManagement.Services;
 using Application.PaymentManagement.Services;
 using Domain.BillingManagement.Repositories;
 using Domain.Common;
 using Domain.IdentityManagement.Repositories;
+using Domain.NotificationManagement.Ports;
 using Domain.NotificationManagement.Repositories;
 using Domain.PaymentManagement.Ports;
 using Domain.PaymentManagement.Repositories;
@@ -16,6 +18,7 @@ using Infrastructure.Jobs;
 using Infrastructure.Payment;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
+using Infrastructure.Sms;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,8 +47,15 @@ public static class DependencyInjection
         // Audit trail service
         services.AddScoped<IAuditTrailService, AuditTrailService>();
 
+        // Notification service (always via Outbox, never direct SMS)
+        services.AddScoped<INotificationService, NotificationService>();
+
         // Hangfire jobs
         services.AddScoped<VerifierChaineAuditJob>();
+        services.AddScoped<OutboxProcessor>();
+        services.AddScoped<RappelJ3Job>();
+        services.AddScoped<RappelJ1Job>();
+        services.AddScoped<RecapHebdoJob>();
 
         // Africa's Talking / Orange Money configuration
         services.Configure<AfricasTalkingOptions>(
@@ -60,6 +70,21 @@ public static class DependencyInjection
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.DefaultRequestHeaders.Add("apiKey", options.ApiKey);
             client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+        });
+
+        // Africa's Talking SMS adapter with retry
+        services.Configure<AfricasTalkingSmsOptions>(
+            configuration.GetSection(AfricasTalkingSmsOptions.SectionName));
+
+        services.AddHttpClient<ISmsGateway, AfricasTalkingSmsAdapter>((sp, client) =>
+        {
+            var smsOptions = configuration.GetSection(AfricasTalkingSmsOptions.SectionName)
+                .Get<AfricasTalkingSmsOptions>() ?? new AfricasTalkingSmsOptions();
+
+            client.BaseAddress = new Uri(smsOptions.BaseUrl);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.DefaultRequestHeaders.Add("apiKey", smsOptions.ApiKey);
+            client.Timeout = TimeSpan.FromSeconds(30);
         });
 
         // Redis – connection multiplexer (singleton) + distributed cache

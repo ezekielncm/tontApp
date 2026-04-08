@@ -37,4 +37,12 @@ internal sealed class NotificationRepository : INotificationRepository
         _dbContext.Notifications.Update(notification);
         return Task.CompletedTask;
     }
+
+    public async Task<int> CountTodayByDestinataireAsync(string destinataireId, CancellationToken cancellationToken = default)
+    {
+        var todayUtc = DateTime.UtcNow.Date;
+        return await _dbContext.Notifications
+            .Where(n => n.DestinataireId == destinataireId && n.CreatedAt >= todayUtc)
+            .CountAsync(cancellationToken);
+    }
 }

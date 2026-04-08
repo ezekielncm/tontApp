@@ -8,4 +8,9 @@ public interface INotificationRepository
     Task<IReadOnlyList<Notification>> GetPendingAsync(CancellationToken cancellationToken = default);
     Task AddAsync(Notification notification, CancellationToken cancellationToken = default);
     Task UpdateAsync(Notification notification, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Counts SMS notifications sent to a member today for rate limiting (max 10 SMS/member/day).
+    /// </summary>
+    Task<int> CountTodayByDestinataireAsync(string destinataireId, CancellationToken cancellationToken = default);
 }

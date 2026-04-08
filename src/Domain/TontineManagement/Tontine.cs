@@ -343,4 +343,16 @@ public class Tontine : AggregateRoot<TontineId>
             _ => scheduledDate.AddMonths(1)
         };
     }
+
+    /// <summary>
+    /// Returns active (non-completed) rounds.
+    /// </summary>
+    public IReadOnlyList<Round> GetActiveRounds() =>
+        _rounds.Where(r => !r.IsCompleted).ToList().AsReadOnly();
+
+    /// <summary>
+    /// Returns active members (not suspended).
+    /// </summary>
+    public IReadOnlyList<Member> GetActiveMembers() =>
+        _members.Where(m => m.Statut == StatutMembre.Actif).ToList().AsReadOnly();
 }

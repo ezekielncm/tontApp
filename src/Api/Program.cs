@@ -117,7 +117,7 @@ public class Program
 
             app.UseHangfireDashboard("/hangfire", new DashboardOptions
             {
-                // TODO: Add IDashboardAuthorizationFilter for production to restrict access
+                Authorization = [new Infrastructure.Jobs.HangfireDashboardAuthFilter()],
                 IsReadOnlyFunc = _ => !app.Environment.IsDevelopment()
             });
 
@@ -126,6 +126,30 @@ public class Program
                 "verifier-chaine-audit-quotidien",
                 job => job.ExecuteAsync(CancellationToken.None),
                 Cron.Daily(2, 0));
+
+            // OutboxProcessor: every 30 seconds
+            RecurringJob.AddOrUpdate<Infrastructure.Jobs.OutboxProcessor>(
+                "outbox-processor",
+                job => job.ExecuteAsync(CancellationToken.None),
+                "*/30 * * * * *");
+
+            // RappelJ3: daily at 08:00 UTC
+            RecurringJob.AddOrUpdate<Infrastructure.Jobs.RappelJ3Job>(
+                "rappel-j3-quotidien",
+                job => job.ExecuteAsync(CancellationToken.None),
+                Cron.Daily(8, 0));
+
+            // RappelJ1: daily at 08:00 UTC
+            RecurringJob.AddOrUpdate<Infrastructure.Jobs.RappelJ1Job>(
+                "rappel-j1-quotidien",
+                job => job.ExecuteAsync(CancellationToken.None),
+                Cron.Daily(8, 0));
+
+            // RecapHebdo: every Monday at 09:00 UTC
+            RecurringJob.AddOrUpdate<Infrastructure.Jobs.RecapHebdoJob>(
+                "recap-hebdomadaire",
+                job => job.ExecuteAsync(CancellationToken.None),
+                Cron.Weekly(DayOfWeek.Monday, 9, 0));
 
             app.MapControllers();
             app.MapHealthChecks("/health");
