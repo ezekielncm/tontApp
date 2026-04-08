@@ -44,6 +44,8 @@ export interface TontineSummary {
   frequence: string;
   nombreMembres: number;
   dateCreation: string;
+  /** Current tour info for badge display */
+  tourActuel: TourInfo | null;
 }
 
 export type TontineStatus =
@@ -53,11 +55,14 @@ export type TontineStatus =
   | 'Completed'
   | 'Cancelled';
 
+/** Payment status for a member in a tour */
+export type StatutPaiement = 'paye' | 'en_attente' | 'en_retard';
+
 /** Tontine detail */
 export interface TontineDetail extends TontineSummary {
   gestionnaireName: string;
+  gestionnaireId: string;
   membres: TontineMember[];
-  tourActuel: TourInfo | null;
 }
 
 export interface TontineMember {
@@ -65,6 +70,8 @@ export interface TontineMember {
   nom: string;
   telephone: string;
   dateAdhesion: string;
+  /** Payment status in current tour */
+  statutPaiement?: StatutPaiement;
 }
 
 export interface TourInfo {
@@ -74,6 +81,10 @@ export interface TourInfo {
   dateOuverture: string;
   dateCloture: string | null;
   estOuvert: boolean;
+  /** Number of payments received for this tour */
+  nombrePaiementsRecus: number;
+  /** Total payments expected for this tour */
+  nombrePaiementsAttendus: number;
 }
 
 /** User profile */
@@ -82,4 +93,54 @@ export interface UserProfile {
   telephone: string;
   nom: string;
   dateInscription: string;
+}
+
+// ─── Payment types ─────────────────────────────────────────────────────────────
+
+/** POST /api/v1/versements/initier body */
+export interface InitierVersementRequest {
+  tontineId: string;
+  tourId: string;
+  montant: number;
+}
+
+/** Payment initiation response */
+export interface InitierVersementResponse {
+  versementId: string;
+  statut: VersementStatut;
+  /** External transaction reference from the payment provider */
+  transactionRef: string;
+}
+
+/** Versement status */
+export type VersementStatut = 'en_attente' | 'confirme' | 'rejete';
+
+/** GET /api/v1/versements/:id status response */
+export interface VersementStatusResponse {
+  versementId: string;
+  statut: VersementStatut;
+  montant: number;
+  dateCreation: string;
+  dateConfirmation: string | null;
+}
+
+// ─── Gestionnaire types ────────────────────────────────────────────────────────
+
+/** Late member info for the gestionnaire screen */
+export interface MembreRetardataire {
+  membreId: string;
+  nom: string;
+  telephone: string;
+  joursRetard: number;
+}
+
+/** POST /api/v1/tontines/:id/tours/:tourId/relancer body */
+export interface RelancerSmsRequest {
+  membreIds: string[];
+}
+
+/** POST /api/v1/tontines/:id/tours/:tourId/clore response */
+export interface CloreTourResponse {
+  tourId: string;
+  estCloture: boolean;
 }
