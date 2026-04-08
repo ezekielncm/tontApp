@@ -67,6 +67,330 @@ public class AbonnementTests
 
         Assert.Throws<InvalidOperationException>(() => abonnement.Renouveler());
     }
+
+    [Fact]
+    public void Create_Pro_SetsCalendarMonthDateFin()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+
+        // DateFin should be the first day of next month (calendar month billing)
+        var now = DateTime.UtcNow;
+        var expectedDateFin = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc).AddMonths(1);
+        Assert.Equal(expectedDateFin, abonnement.DateFin);
+    }
+
+    [Fact]
+    public void Create_Pro_SetsRenouvellementAutoTrue()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+
+        Assert.True(abonnement.RenouvellementAuto);
+    }
+
+    [Fact]
+    public void Create_Gratuit_SetsRenouvellementAutoFalse()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Gratuit);
+
+        Assert.False(abonnement.RenouvellementAuto);
+    }
+
+    [Fact]
+    public void Create_SetsPlanId()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+
+        Assert.Equal(PlanAbonnement.SeedIds.Pro, abonnement.PlanId.Value);
+    }
+
+    [Fact]
+    public void Renouveler_SetsTransactionId()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+
+        abonnement.Renouveler("tx-123");
+
+        Assert.Equal("tx-123", abonnement.DernierTransactionId);
+    }
+
+    [Fact]
+    public void Renouveler_RaisesAbonnementRenouvelleEvent()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+        abonnement.ClearDomainEvents(); // clear create event
+
+        abonnement.Renouveler();
+
+        var domainEvent = Assert.Single(abonnement.DomainEvents);
+        var renewEvent = Assert.IsType<AbonnementRenouvelleEvent>(domainEvent);
+        Assert.Equal("gestionnaire-1", renewEvent.GestionnaireId);
+        Assert.Equal(PlanTarifaire.Pro, renewEvent.Plan);
+    }
+
+    [Fact]
+    public void Renouveler_ClearsGracePeriod()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+
+        abonnement.Renouveler();
+
+        Assert.Null(abonnement.DateFinGrace);
+        Assert.Equal(StatutAbonnement.Actif, abonnement.Statut);
+    }
+
+    [Fact]
+    public void PasserEnGrace_SetsEnGraceStatut()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+
+        abonnement.PasserEnGrace();
+
+        Assert.Equal(StatutAbonnement.EnGrace, abonnement.Statut);
+        Assert.NotNull(abonnement.DateFinGrace);
+    }
+
+    [Fact]
+    public void PasserEnGrace_Gratuit_DoesNothing()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Gratuit);
+
+        abonnement.PasserEnGrace();
+
+        Assert.Equal(StatutAbonnement.Actif, abonnement.Statut);
+        Assert.Null(abonnement.DateFinGrace);
+    }
+
+    [Fact]
+    public void PasserEnGrace_WhenNotActif_ThrowsInvalidOperationException()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+        abonnement.Annuler();
+
+        Assert.Throws<InvalidOperationException>(() => abonnement.PasserEnGrace());
+    }
+
+    [Fact]
+    public void PasserEnGrace_SetsGracePeriod3Days()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+
+        abonnement.PasserEnGrace();
+
+        Assert.NotNull(abonnement.DateFinGrace);
+        var expectedGraceEnd = abonnement.DateFin.AddDays(Abonnement.GracePeriodJours);
+        Assert.Equal(expectedGraceEnd, abonnement.DateFinGrace);
+    }
+
+    [Fact]
+    public void Expirer_SetsStatutExpire()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+
+        abonnement.Expirer();
+
+        Assert.Equal(StatutAbonnement.Expire, abonnement.Statut);
+    }
+
+    [Fact]
+    public void Expirer_Gratuit_DoesNothing()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Gratuit);
+
+        abonnement.Expirer();
+
+        Assert.Equal(StatutAbonnement.Actif, abonnement.Statut);
+    }
+
+    [Fact]
+    public void Expirer_RaisesAbonnementExpireEvent()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+        abonnement.ClearDomainEvents();
+
+        abonnement.Expirer();
+
+        var domainEvent = Assert.Single(abonnement.DomainEvents);
+        Assert.IsType<AbonnementExpireEvent>(domainEvent);
+    }
+
+    [Fact]
+    public void EstFonctionnellementActif_Actif_ReturnsTrue()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+
+        Assert.True(abonnement.EstFonctionnellementActif());
+    }
+
+    [Fact]
+    public void EstFonctionnellementActif_EnGrace_ReturnsTrue()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+        abonnement.PasserEnGrace();
+
+        Assert.True(abonnement.EstFonctionnellementActif());
+    }
+
+    [Fact]
+    public void EstFonctionnellementActif_Expire_ReturnsFalse()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+        abonnement.Expirer();
+
+        Assert.False(abonnement.EstFonctionnellementActif());
+    }
+
+    [Fact]
+    public void EstFonctionnellementActif_Annule_ReturnsFalse()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+        abonnement.Annuler();
+
+        Assert.False(abonnement.EstFonctionnellementActif());
+    }
+
+    [Fact]
+    public void Annuler_DisablesAutoRenewal()
+    {
+        var abonnement = Abonnement.Create("gestionnaire-1", PlanTarifaire.Pro);
+        Assert.True(abonnement.RenouvellementAuto);
+
+        abonnement.Annuler();
+
+        Assert.False(abonnement.RenouvellementAuto);
+    }
+
+    [Fact]
+    public void CreateAvecPlan_SetsAllFields()
+    {
+        var planId = PlanAbonnementId.From(PlanAbonnement.SeedIds.Pro);
+        var abonnement = Abonnement.CreateAvecPlan(
+            "gestionnaire-1",
+            planId,
+            PlanTarifaire.Pro,
+            2000m,
+            "tx-456");
+
+        Assert.Equal("gestionnaire-1", abonnement.GestionnaireId);
+        Assert.Equal(planId, abonnement.PlanId);
+        Assert.Equal(PlanTarifaire.Pro, abonnement.Plan);
+        Assert.Equal(2000m, abonnement.MontantMensuel);
+        Assert.Equal("tx-456", abonnement.DernierTransactionId);
+        Assert.Equal(StatutAbonnement.Actif, abonnement.Statut);
+    }
+
+    [Fact]
+    public void Create_WithEmptyGestionnaireId_ThrowsArgumentException()
+    {
+        Assert.Throws<ArgumentException>(() => Abonnement.Create("", PlanTarifaire.Pro));
+    }
+}
+
+public class PlanAbonnementTests
+{
+    [Fact]
+    public void Create_WithValidParams_SetsAllProperties()
+    {
+        var plan = PlanAbonnement.Create(
+            "Pro", "PRO", 2000m, "XOF", 10, int.MaxValue, "Plan Pro");
+
+        Assert.Equal("Pro", plan.Nom);
+        Assert.Equal("PRO", plan.Code);
+        Assert.Equal(2000m, plan.PrixMensuel);
+        Assert.Equal("XOF", plan.Devise);
+        Assert.Equal(10, plan.MaxTontines);
+        Assert.Equal(int.MaxValue, plan.MaxMembresParTontine);
+        Assert.Equal("Plan Pro", plan.Description);
+        Assert.True(plan.EstActif);
+    }
+
+    [Fact]
+    public void Create_WithEmptyNom_ThrowsArgumentException()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            PlanAbonnement.Create("", "PRO", 2000m, "XOF", 10, 100));
+    }
+
+    [Fact]
+    public void Create_WithEmptyCode_ThrowsArgumentException()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            PlanAbonnement.Create("Pro", "", 2000m, "XOF", 10, 100));
+    }
+
+    [Fact]
+    public void Create_WithNegativePrice_ThrowsArgumentException()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            PlanAbonnement.Create("Pro", "PRO", -1m, "XOF", 10, 100));
+    }
+
+    [Fact]
+    public void Create_WithNegativeMaxTontines_ThrowsArgumentException()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            PlanAbonnement.Create("Pro", "PRO", 2000m, "XOF", -1, 100));
+    }
+
+    [Fact]
+    public void Create_WithNegativeMaxMembres_ThrowsArgumentException()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            PlanAbonnement.Create("Pro", "PRO", 2000m, "XOF", 10, -1));
+    }
+
+    [Fact]
+    public void CreateWithId_SetsSpecificId()
+    {
+        var id = Guid.NewGuid();
+        var plan = PlanAbonnement.CreateWithId(id, "Test", "TEST", 100m, "XOF", 5, 50);
+
+        Assert.Equal(id, plan.Id.Value);
+    }
+
+    [Fact]
+    public void Desactiver_SetsEstActifFalse()
+    {
+        var plan = PlanAbonnement.Create("Pro", "PRO", 2000m, "XOF", 10, 100);
+
+        plan.Desactiver();
+
+        Assert.False(plan.EstActif);
+    }
+
+    [Fact]
+    public void Activer_SetsEstActifTrue()
+    {
+        var plan = PlanAbonnement.Create("Pro", "PRO", 2000m, "XOF", 10, 100);
+        plan.Desactiver();
+
+        plan.Activer();
+
+        Assert.True(plan.EstActif);
+    }
+
+    [Fact]
+    public void SeedIds_AreNotEmpty()
+    {
+        Assert.NotEqual(Guid.Empty, PlanAbonnement.SeedIds.Gratuit);
+        Assert.NotEqual(Guid.Empty, PlanAbonnement.SeedIds.Pro);
+        Assert.NotEqual(Guid.Empty, PlanAbonnement.SeedIds.Imf);
+    }
+
+    [Fact]
+    public void SeedIds_AreDistinct()
+    {
+        Assert.NotEqual(PlanAbonnement.SeedIds.Gratuit, PlanAbonnement.SeedIds.Pro);
+        Assert.NotEqual(PlanAbonnement.SeedIds.Pro, PlanAbonnement.SeedIds.Imf);
+        Assert.NotEqual(PlanAbonnement.SeedIds.Gratuit, PlanAbonnement.SeedIds.Imf);
+    }
+
+    [Fact]
+    public void Codes_AreCorrectValues()
+    {
+        Assert.Equal("GRATUIT", PlanAbonnement.Codes.Gratuit);
+        Assert.Equal("PRO", PlanAbonnement.Codes.Pro);
+        Assert.Equal("IMF", PlanAbonnement.Codes.Imf);
+    }
 }
 
 public class ScoreCreditTests

@@ -9,4 +9,6 @@ public sealed record AbonnementDto(
     string Currency,
     DateTime DateDebut,
     DateTime DateFin,
+    DateTime? DateFinGrace,
+    bool RenouvellementAuto,
     DateTime CreatedAt);

@@ -9,5 +9,9 @@ public enum NotificationType
     Bienvenue,
     Suspension,
     RecapHebdomadaire,
-    MessagePersonnalise
+    MessagePersonnalise,
+    ConfirmationAbonnement,
+    RappelRenouvellement,
+    RenouvellementReussi,
+    RenouvellementEchoue
 }

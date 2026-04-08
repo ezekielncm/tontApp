@@ -151,6 +151,18 @@ public class Program
                 job => job.ExecuteAsync(CancellationToken.None),
                 Cron.Weekly(DayOfWeek.Monday, 9, 0));
 
+            // RappelRenouvellementJ3: daily at 08:00 UTC (3 days before subscription expiry)
+            RecurringJob.AddOrUpdate<Infrastructure.Jobs.RappelRenouvellementJ3Job>(
+                "rappel-renouvellement-j3",
+                job => job.ExecuteAsync(CancellationToken.None),
+                Cron.Daily(8, 0));
+
+            // RenouvellementAbonnement: daily at 00:30 UTC (attempt auto-renewal on expiry day)
+            RecurringJob.AddOrUpdate<Infrastructure.Jobs.RenouvellementAbonnementJob>(
+                "renouvellement-abonnement-quotidien",
+                job => job.ExecuteAsync(CancellationToken.None),
+                Cron.Daily(0, 30));
+
             app.MapControllers();
             app.MapHealthChecks("/health");
 

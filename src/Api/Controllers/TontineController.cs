@@ -8,6 +8,7 @@ using Application.TontineManagement.Commands.GenererCodeInvitation;
 using Application.TontineManagement.Commands.OuvrirTour;
 using Application.TontineManagement.Commands.RejoindreParCode;
 using Application.TontineManagement.Queries.GetTontineById;
+using Infrastructure.Billing;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -39,6 +40,7 @@ public class TontineController : ControllerBase
     /// <response code="201">Tontine created successfully.</response>
     /// <response code="400">Validation error.</response>
     [HttpPost]
+    [CheckAbonnementFilter]
     [ProducesResponseType(typeof(CreateTontineResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(

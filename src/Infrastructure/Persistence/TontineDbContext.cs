@@ -24,6 +24,7 @@ public sealed class TontineDbContext : DbContext, IUnitOfWork
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Utilisateur> Utilisateurs => Set<Utilisateur>();
     public DbSet<Abonnement> Abonnements => Set<Abonnement>();
+    public DbSet<PlanAbonnement> PlansAbonnement => Set<PlanAbonnement>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     public TontineDbContext(DbContextOptions<TontineDbContext> options, IMediator mediator)

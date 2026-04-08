@@ -32,6 +32,8 @@ public sealed class GetAbonnementByGestionnaireQueryHandler
             abonnement.Currency,
             abonnement.DateDebut,
             abonnement.DateFin,
+            abonnement.DateFinGrace,
+            abonnement.RenouvellementAuto,
             abonnement.CreatedAt);
     }
 }
