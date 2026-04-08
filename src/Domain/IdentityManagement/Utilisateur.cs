@@ -6,25 +6,23 @@ using Domain.IdentityManagement.ValueObjects;
 
 public class Utilisateur : AggregateRoot<UtilisateurId>
 {
-    public string Telephone { get; private set; }
+    public TelephoneId Telephone { get; private set; } = null!;
     public string Nom { get; private set; }
-    public string MotDePasseHash { get; private set; }
+    public MotDePasseHash MotDePasseHash { get; private set; } = null!;
     public RoleUtilisateur Role { get; private set; }
     public bool EstActif { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
     private Utilisateur() : base()
     {
-        Telephone = string.Empty;
         Nom = string.Empty;
-        MotDePasseHash = string.Empty;
     }
 
     private Utilisateur(
         UtilisateurId id,
-        string telephone,
+        TelephoneId telephone,
         string nom,
-        string motDePasseHash,
+        MotDePasseHash motDePasseHash,
         RoleUtilisateur role) : base(id)
     {
         Telephone = telephone;
@@ -41,28 +39,22 @@ public class Utilisateur : AggregateRoot<UtilisateurId>
         string motDePasseHash,
         RoleUtilisateur role = RoleUtilisateur.Membre)
     {
-        if (string.IsNullOrWhiteSpace(telephone))
-            throw new ArgumentException("Telephone must not be empty.", nameof(telephone));
-
-        if (!telephone.StartsWith('+') || telephone.Length < 4)
-            throw new ArgumentException("Telephone must start with '+' and contain at least a country code.", nameof(telephone));
-
         if (string.IsNullOrWhiteSpace(nom))
             throw new ArgumentException("Nom must not be empty.", nameof(nom));
 
-        if (string.IsNullOrWhiteSpace(motDePasseHash))
-            throw new ArgumentException("MotDePasseHash must not be empty.", nameof(motDePasseHash));
+        var telephoneId = TelephoneId.Create(telephone);
+        var hash = MotDePasseHash.FromHash(motDePasseHash);
 
         var utilisateur = new Utilisateur(
             UtilisateurId.Create(),
-            telephone,
+            telephoneId,
             nom,
-            motDePasseHash,
+            hash,
             role);
 
-        utilisateur.AddDomainEvent(new UtilisateurCreatedEvent(
+        utilisateur.AddDomainEvent(new UtilisateurInscritEvent(
             utilisateur.Id,
-            telephone,
+            telephoneId.Value,
             nom));
 
         return utilisateur;

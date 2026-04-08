@@ -9,7 +9,7 @@ public class UtilisateurTests
     private static Utilisateur CreateDefaultUtilisateur(
         string telephone = "+22670001234",
         string nom = "Moussa Diop",
-        string motDePasseHash = "hashedpassword123",
+        string motDePasseHash = "$2a$11$fakehashfortest000000000000000000000000000000",
         RoleUtilisateur role = RoleUtilisateur.Membre)
     {
         return Utilisateur.Create(telephone, nom, motDePasseHash, role);
@@ -20,7 +20,7 @@ public class UtilisateurTests
     {
         var utilisateur = CreateDefaultUtilisateur();
 
-        Assert.Equal("+22670001234", utilisateur.Telephone);
+        Assert.Equal("+22670001234", utilisateur.Telephone.Value);
         Assert.Equal("Moussa Diop", utilisateur.Nom);
         Assert.Equal(RoleUtilisateur.Membre, utilisateur.Role);
         Assert.True(utilisateur.EstActif);
@@ -33,25 +33,25 @@ public class UtilisateurTests
     public void Create_WithEmptyTelephone_ThrowsArgumentException(string? telephone)
     {
         Assert.Throws<ArgumentException>(() =>
-            Utilisateur.Create(telephone!, "Nom", "hash"));
+            Utilisateur.Create(telephone!, "Nom", "$2a$11$fakehash000000000000000000000000000000000000"));
     }
 
     [Fact]
     public void Create_WithInvalidTelephone_NoPlusPrefix_ThrowsArgumentException()
     {
         Assert.Throws<ArgumentException>(() =>
-            Utilisateur.Create("221770001234", "Nom", "hash"));
+            Utilisateur.Create("221770001234", "Nom", "$2a$11$fakehash000000000000000000000000000000000000"));
     }
 
     [Fact]
-    public void Create_RaisesUtilisateurCreatedEvent()
+    public void Create_RaisesUtilisateurInscritEvent()
     {
         var utilisateur = CreateDefaultUtilisateur();
 
         var domainEvent = Assert.Single(utilisateur.DomainEvents);
-        var createdEvent = Assert.IsType<UtilisateurCreatedEvent>(domainEvent);
-        Assert.Equal("+22670001234", createdEvent.Telephone);
-        Assert.Equal("Moussa Diop", createdEvent.Nom);
+        var inscritEvent = Assert.IsType<UtilisateurInscritEvent>(domainEvent);
+        Assert.Equal("+22670001234", inscritEvent.Telephone);
+        Assert.Equal("Moussa Diop", inscritEvent.Nom);
     }
 
     [Fact]
@@ -83,5 +83,39 @@ public class UtilisateurTests
         utilisateur.ChangerRole(RoleUtilisateur.Admin);
 
         Assert.Equal(RoleUtilisateur.Admin, utilisateur.Role);
+    }
+
+    [Fact]
+    public void Create_NormalizesE164Telephone()
+    {
+        var utilisateur = Utilisateur.Create("+226 70 00 12 34", "Test", "$2a$11$fakehash000000000000000000000000000000000000");
+
+        Assert.Equal("+22670001234", utilisateur.Telephone.Value);
+    }
+
+    [Fact]
+    public void TelephoneId_Create_WithValidE164_Succeeds()
+    {
+        var tel = TelephoneId.Create("+22670000000");
+        Assert.Equal("+22670000000", tel.Value);
+    }
+
+    [Fact]
+    public void TelephoneId_Create_WithInvalidFormat_Throws()
+    {
+        Assert.Throws<ArgumentException>(() => TelephoneId.Create("0670000000"));
+    }
+
+    [Fact]
+    public void MotDePasseHash_ToString_ReturnsRedacted()
+    {
+        var hash = MotDePasseHash.FromHash("$2a$11$somehash");
+        Assert.Equal("***REDACTED***", hash.ToString());
+    }
+
+    [Fact]
+    public void MotDePasseHash_FromHash_WithEmpty_Throws()
+    {
+        Assert.Throws<ArgumentException>(() => MotDePasseHash.FromHash(""));
     }
 }
