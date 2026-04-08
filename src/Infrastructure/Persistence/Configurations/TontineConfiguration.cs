@@ -1,5 +1,6 @@
 namespace Infrastructure.Persistence.Configurations;
 
+using Domain.IdentityManagement.ValueObjects;
 using Domain.TontineManagement;
 using Domain.TontineManagement.Entities;
 using Domain.TontineManagement.ValueObjects;
@@ -152,6 +153,12 @@ internal sealed class MemberConfiguration : IEntityTypeConfiguration<Member>
         builder.Property(m => m.JoinedAt)
             .HasColumnName("joined_at")
             .IsRequired();
+
+        builder.Property(m => m.UtilisateurId)
+            .HasColumnName("utilisateur_id")
+            .HasConversion(
+                id => id != null ? id.Value : (Guid?)null,
+                value => value.HasValue ? UtilisateurId.From(value.Value) : null);
     }
 }
 
@@ -191,5 +198,42 @@ internal sealed class RoundConfiguration : IEntityTypeConfiguration<Round>
         builder.Property(r => r.IsCompleted)
             .HasColumnName("est_complete")
             .IsRequired();
+    }
+}
+
+internal sealed class InvitationConfiguration : IEntityTypeConfiguration<Invitation>
+{
+    public void Configure(EntityTypeBuilder<Invitation> builder)
+    {
+        builder.ToTable("codes_invitation");
+
+        builder.HasKey(i => i.Id);
+
+        builder.Property(i => i.Id)
+            .HasColumnName("id")
+            .HasConversion(
+                id => id.Value,
+                value => InvitationId.From(value));
+
+        builder.Property(i => i.CodeHash)
+            .HasColumnName("code_hash")
+            .HasMaxLength(64)
+            .IsRequired();
+
+        builder.Property(i => i.ExpiresAt)
+            .HasColumnName("date_expiration")
+            .IsRequired();
+
+        builder.Property(i => i.NombreUsagesMax)
+            .HasColumnName("nombre_usages_max")
+            .IsRequired();
+
+        builder.Property(i => i.NombreUsagesActuels)
+            .HasColumnName("nombre_usages_actuels")
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        builder.HasIndex(i => i.CodeHash)
+            .HasDatabaseName("ix_codes_invitation_code_hash");
     }
 }

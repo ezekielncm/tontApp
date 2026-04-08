@@ -1,6 +1,7 @@
 namespace Domain.TontineManagement;
 
 using Domain.Common;
+using Domain.IdentityManagement.ValueObjects;
 using Domain.TontineManagement.Entities;
 using Domain.TontineManagement.Events;
 using Domain.TontineManagement.ValueObjects;
@@ -240,41 +241,54 @@ public class Tontine : AggregateRoot<TontineId>
     }
 
     // ── GenerateInvitation ──────────────────────────────────────────
-    public Invitation GenerateInvitation(bool isMultipleUse = false)
+    /// <summary>
+    /// Generates a new invitation code for this tontine. Returns the invitation entity and the
+    /// plain-text code. The plain code must be shared with invitees; only the hash is persisted.
+    /// </summary>
+    public (Invitation Invitation, string PlainCode) GenerateInvitation(int nombreUsagesMax = 1, int expirationDays = 7)
     {
         if (Status != TontineStatus.Draft)
             throw new InvalidOperationException("Invitations can only be generated when the tontine is in Draft status.");
 
-        var invitation = Invitation.Create(isMultipleUse);
+        var (invitation, plainCode) = Invitation.Create(nombreUsagesMax, expirationDays);
         _invitations.Add(invitation);
 
-        AddDomainEvent(new InvitationGeneratedEvent(Id, invitation.Id, invitation.Code.ToString()));
+        AddDomainEvent(new InvitationGeneratedEvent(Id, invitation.Id, plainCode));
 
-        return invitation;
+        return (invitation, plainCode);
     }
 
     // ── JoinWithInvitation ──────────────────────────────────────────
-    public Member JoinWithInvitation(string memberName, string invitationCode)
+    /// <summary>
+    /// Allows a user to join the tontine using a plain-text invitation code.
+    /// Validates: tontine is Draft, code matches a valid invitation, user not already a member.
+    /// </summary>
+    public Member JoinWithInvitation(string memberName, string invitationCode, UtilisateurId utilisateurId)
     {
         if (Status != TontineStatus.Draft)
             throw new InvalidOperationException("Members can only join when the tontine is in Draft status.");
 
-        var invitation = _invitations.FirstOrDefault(i => i.Code.ToString() == invitationCode.ToUpperInvariant())
+        // Find invitation by comparing hash
+        var invitation = _invitations.FirstOrDefault(i => i.MatchesCode(invitationCode))
             ?? throw new InvalidOperationException("Invalid invitation code.");
 
         if (!invitation.IsValid())
-            throw new InvalidOperationException("The invitation code is expired or already used.");
+            throw new InvalidOperationException("The invitation code is expired or has reached its maximum usage count.");
 
         if (_members.Count >= Reglement.MaxMembers)
             throw new InvalidOperationException($"Cannot add more than {Reglement.MaxMembers} members.");
 
+        // Prevent the same user from joining twice
+        if (_members.Any(m => m.UtilisateurId is not null && m.UtilisateurId == utilisateurId))
+            throw new InvalidOperationException("This user is already a member of this tontine.");
+
         if (_members.Any(m => m.Name == memberName))
             throw new InvalidOperationException($"A member with the name '{memberName}' already exists.");
 
-        var member = Member.Create(memberName, _members.Count + 1);
+        var member = Member.Create(memberName, _members.Count + 1, utilisateurId);
         _members.Add(member);
 
-        invitation.MarkUsed();
+        invitation.IncrementUsage();
 
         AddDomainEvent(new MemberAddedEvent(Id, member.Id, memberName));
 
