@@ -1,14 +1,13 @@
 namespace Application.IdentityManagement.Commands.InscrireUtilisateur;
 
+using Application.IdentityManagement.Validators;
 using FluentValidation;
 
 public sealed class InscrireUtilisateurCommandValidator : AbstractValidator<InscrireUtilisateurCommand>
 {
     public InscrireUtilisateurCommandValidator()
     {
-        RuleFor(x => x.Telephone)
-            .NotEmpty().WithMessage("Le numéro de téléphone est requis.")
-            .Matches(@"^\+[1-9]\d{1,14}$").WithMessage("Le numéro de téléphone doit être au format E.164 (ex: +22670000000).");
+        RuleFor(x => x.Telephone).MustBeE164Telephone();
 
         RuleFor(x => x.Nom)
             .NotEmpty().WithMessage("Le nom est requis.")
