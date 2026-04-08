@@ -36,7 +36,7 @@ const loginSchema = z.object({
     .string()
     .min(1, 'Le numéro de téléphone est requis.')
     .regex(
-      /^\+\d{10,15}$/,
+      /^\+\d{1,15}$/,
       'Format invalide. Utilisez le format international (ex: +22670000000).',
     ),
   motDePasse: z

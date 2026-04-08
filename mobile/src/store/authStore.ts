@@ -61,57 +61,53 @@ export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
   // ─── Actions ───────────────────────────────────────────────────────────────
 
   setTokens: (accessToken: string, refreshToken: string) => {
-    void SecureStore.setItemAsync(
-      SECURE_STORE_KEYS.ACCESS_TOKEN,
-      accessToken,
-    );
-    void SecureStore.setItemAsync(
-      SECURE_STORE_KEYS.REFRESH_TOKEN,
-      refreshToken,
-    );
+    // Update state immediately for responsiveness, persist in background
     set((state) => ({
       accessToken,
       refreshToken,
       isAuthenticated: state.user !== null,
     }));
+    void Promise.all([
+      SecureStore.setItemAsync(SECURE_STORE_KEYS.ACCESS_TOKEN, accessToken),
+      SecureStore.setItemAsync(SECURE_STORE_KEYS.REFRESH_TOKEN, refreshToken),
+    ]);
   },
 
   setUser: (user: UserInfo) => {
-    void SecureStore.setItemAsync(USER_STORE_KEY, JSON.stringify(user));
     set({
       user,
       isAuthenticated: true,
     });
+    void SecureStore.setItemAsync(USER_STORE_KEY, JSON.stringify(user));
   },
 
   setAuth: (user: UserInfo, accessToken: string, refreshToken: string) => {
-    void SecureStore.setItemAsync(
-      SECURE_STORE_KEYS.ACCESS_TOKEN,
-      accessToken,
-    );
-    void SecureStore.setItemAsync(
-      SECURE_STORE_KEYS.REFRESH_TOKEN,
-      refreshToken,
-    );
-    void SecureStore.setItemAsync(USER_STORE_KEY, JSON.stringify(user));
+    // Update state immediately for responsiveness, persist in background
     set({
       user,
       accessToken,
       refreshToken,
       isAuthenticated: true,
     });
+    void Promise.all([
+      SecureStore.setItemAsync(SECURE_STORE_KEYS.ACCESS_TOKEN, accessToken),
+      SecureStore.setItemAsync(SECURE_STORE_KEYS.REFRESH_TOKEN, refreshToken),
+      SecureStore.setItemAsync(USER_STORE_KEY, JSON.stringify(user)),
+    ]);
   },
 
   clearAuth: () => {
-    void SecureStore.deleteItemAsync(SECURE_STORE_KEYS.ACCESS_TOKEN);
-    void SecureStore.deleteItemAsync(SECURE_STORE_KEYS.REFRESH_TOKEN);
-    void SecureStore.deleteItemAsync(USER_STORE_KEY);
     set({
       user: null,
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
     });
+    void Promise.all([
+      SecureStore.deleteItemAsync(SECURE_STORE_KEYS.ACCESS_TOKEN),
+      SecureStore.deleteItemAsync(SECURE_STORE_KEYS.REFRESH_TOKEN),
+      SecureStore.deleteItemAsync(USER_STORE_KEY),
+    ]);
   },
 
   hydrate: async () => {

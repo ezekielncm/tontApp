@@ -108,7 +108,7 @@ export function TontineDetailScreen({
                 tourId: tontine.tourActuel?.id ?? '',
               })
             }
-            disabled={!tontine.tourActuel.estOuvert}
+            disabled={!tontine.tourActuel || !tontine.tourActuel.estOuvert}
           />
         </View>
       ) : null}
