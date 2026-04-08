@@ -1,10 +1,12 @@
 namespace Infrastructure.Persistence;
 
+using System.Text.Json;
 using Domain.BillingManagement;
 using Domain.Common;
 using Domain.IdentityManagement;
 using Domain.NotificationManagement;
 using Domain.PaymentManagement;
+using Domain.PaymentManagement.Events;
 using Domain.TontineManagement;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +20,7 @@ public sealed class TontineDbContext : DbContext, IUnitOfWork
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Utilisateur> Utilisateurs => Set<Utilisateur>();
     public DbSet<Abonnement> Abonnements => Set<Abonnement>();
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     public TontineDbContext(DbContextOptions<TontineDbContext> options, IMediator mediator)
         : base(options)
@@ -42,6 +45,28 @@ public sealed class TontineDbContext : DbContext, IUnitOfWork
                 return events;
             })
             .ToList();
+
+        // Outbox pattern: persist VersementConfirmedEvent in the same transaction
+        foreach (var domainEvent in domainEvents)
+        {
+            if (domainEvent is VersementConfirmedEvent confirmedEvent)
+            {
+                var outboxMessage = OutboxMessage.Create(
+                    nameof(VersementConfirmedEvent),
+                    JsonSerializer.Serialize(new
+                    {
+                        confirmedEvent.VersementId.Value,
+                        TontineId = confirmedEvent.TontineId.Value,
+                        PayeurId = confirmedEvent.PayeurId.Value,
+                        TourId = confirmedEvent.TourId.Value,
+                        confirmedEvent.Montant,
+                        confirmedEvent.ReferenceExterne,
+                        confirmedEvent.OccurredOn
+                    }));
+
+                OutboxMessages.Add(outboxMessage);
+            }
+        }
 
         var result = await base.SaveChangesAsync(cancellationToken);
 

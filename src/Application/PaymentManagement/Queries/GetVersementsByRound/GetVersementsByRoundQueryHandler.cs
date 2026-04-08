@@ -2,6 +2,7 @@ namespace Application.PaymentManagement.Queries.GetVersementsByRound;
 
 using Application.Common;
 using Domain.PaymentManagement.Repositories;
+using Domain.PaymentManagement.ValueObjects;
 using Domain.TontineManagement.ValueObjects;
 
 public sealed class GetVersementsByRoundQueryHandler
@@ -18,18 +19,18 @@ public sealed class GetVersementsByRoundQueryHandler
         GetVersementsByRoundQuery request,
         CancellationToken cancellationToken)
     {
-        var versements = await _versementRepository.GetByTontineAndRoundAsync(
+        var versements = await _versementRepository.GetByTontineAndTourAsync(
             TontineId.From(request.TontineId),
-            RoundId.From(request.RoundId),
+            TourId.From(request.TourId),
             cancellationToken);
 
         return versements.Select(v => new VersementDto(
             v.Id.Value,
             v.TontineId.Value,
-            v.MemberId.Value,
-            v.RoundId.Value,
-            v.Montant,
-            v.Currency,
+            v.PayeurId.Value,
+            v.TourId.Value,
+            v.Montant.Valeur,
+            v.Montant.Devise,
             v.Statut.ToString(),
             v.ReferenceExterne,
             v.CreatedAt,

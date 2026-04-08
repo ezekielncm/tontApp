@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 internal sealed class VersementRepository : IVersementRepository
 {
+    private const string AuditTrailNavigation = "_auditTrail";
     private readonly TontineDbContext _dbContext;
 
     public VersementRepository(TontineDbContext dbContext)
@@ -18,23 +19,50 @@ internal sealed class VersementRepository : IVersementRepository
     public async Task<Versement?> GetByIdAsync(VersementId id, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Versements
+            .Include(AuditTrailNavigation)
             .FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Versement>> GetByTontineAndRoundAsync(
-        TontineId tontineId, RoundId roundId, CancellationToken cancellationToken = default)
+    public async Task<Versement?> GetByReferenceExterneAsync(string referenceExterne, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Versements
-            .Where(v => v.TontineId == tontineId && v.RoundId == roundId)
+            .Include(AuditTrailNavigation)
+            .FirstOrDefaultAsync(v => v.ReferenceExterne == referenceExterne, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Versement>> GetByTontineAndTourAsync(
+        TontineId tontineId, TourId tourId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Versements
+            .Where(v => v.TontineId == tontineId && v.TourId == tourId)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Versement>> GetByMemberAsync(
-        MemberId memberId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Versement>> GetByTontineAsync(
+        TontineId tontineId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Versements
-            .Where(v => v.MemberId == memberId)
+            .Include(AuditTrailNavigation)
+            .Where(v => v.TontineId == tontineId)
+            .OrderBy(v => v.CreatedAt)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Versement>> GetByPayeurAsync(
+        PayeurId payeurId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Versements
+            .Where(v => v.PayeurId == payeurId)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Versement?> GetLastByTontineAsync(
+        TontineId tontineId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Versements
+            .Where(v => v.TontineId == tontineId)
+            .OrderByDescending(v => v.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task AddAsync(Versement versement, CancellationToken cancellationToken = default)

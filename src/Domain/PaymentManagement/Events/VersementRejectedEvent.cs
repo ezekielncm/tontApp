@@ -4,20 +4,20 @@ using Domain.Common;
 using Domain.PaymentManagement.ValueObjects;
 using Domain.TontineManagement.ValueObjects;
 
-public sealed class VersementCreatedEvent : IDomainEvent
+public sealed class VersementRejectedEvent : IDomainEvent
 {
     public VersementId VersementId { get; }
     public TontineId TontineId { get; }
     public PayeurId PayeurId { get; }
-    public decimal Montant { get; }
+    public string Raison { get; }
     public DateTime OccurredOn { get; }
 
-    public VersementCreatedEvent(VersementId versementId, TontineId tontineId, PayeurId payeurId, decimal montant)
+    public VersementRejectedEvent(VersementId versementId, TontineId tontineId, PayeurId payeurId, string raison)
     {
         VersementId = versementId;
         TontineId = tontineId;
         PayeurId = payeurId;
-        Montant = montant;
+        Raison = raison;
         OccurredOn = DateTime.UtcNow;
     }
 }
