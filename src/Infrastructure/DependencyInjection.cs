@@ -1,5 +1,6 @@
 ﻿namespace Infrastructure;
 
+using Application.IdentityManagement.Services;
 using Domain.BillingManagement.Repositories;
 using Domain.Common;
 using Domain.IdentityManagement.Repositories;
@@ -8,11 +9,13 @@ using Domain.PaymentManagement.Repositories;
 using Domain.TontineManagement.Repositories;
 using Hangfire;
 using Hangfire.PostgreSql;
+using Infrastructure.Auth;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 public static class DependencyInjection
 {
@@ -33,12 +36,22 @@ public static class DependencyInjection
         services.AddScoped<IUtilisateurRepository, UtilisateurRepository>();
         services.AddScoped<IAbonnementRepository, AbonnementRepository>();
 
-        // Redis distributed cache
+        // Redis – connection multiplexer (singleton) + distributed cache
+        var redisConnectionString = configuration.GetConnectionString("Redis") ?? "localhost:6379";
+        services.AddSingleton<IConnectionMultiplexer>(
+            ConnectionMultiplexer.Connect(redisConnectionString));
+
         services.AddStackExchangeRedisCache(options =>
         {
-            options.Configuration = configuration.GetConnectionString("Redis");
+            options.Configuration = redisConnectionString;
             options.InstanceName = "TontinesApp:";
         });
+
+        // Auth services
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
+        services.AddScoped<IJwtService, JwtService>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddScoped<ILoginAttemptService, LoginAttemptService>();
 
         // Hangfire background jobs
         services.AddHangfire(config => config

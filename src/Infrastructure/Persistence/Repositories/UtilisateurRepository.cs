@@ -22,8 +22,16 @@ internal sealed class UtilisateurRepository : IUtilisateurRepository
 
     public async Task<Utilisateur?> GetByTelephoneAsync(string telephone, CancellationToken cancellationToken = default)
     {
+        var telephoneId = TelephoneId.From(telephone);
         return await _dbContext.Utilisateurs
-            .FirstOrDefaultAsync(u => u.Telephone == telephone, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Telephone == telephoneId, cancellationToken);
+    }
+
+    public async Task<bool> ExistsByTelephoneAsync(string telephone, CancellationToken cancellationToken = default)
+    {
+        var telephoneId = TelephoneId.From(telephone);
+        return await _dbContext.Utilisateurs
+            .AnyAsync(u => u.Telephone == telephoneId, cancellationToken);
     }
 
     public async Task AddAsync(Utilisateur utilisateur, CancellationToken cancellationToken = default)

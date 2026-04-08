@@ -25,7 +25,7 @@ public sealed class GetUtilisateurByTelephoneQueryHandler
 
         return new UtilisateurDto(
             utilisateur.Id.Value,
-            utilisateur.Telephone,
+            utilisateur.Telephone.Value,
             utilisateur.Nom,
             utilisateur.Role.ToString(),
             utilisateur.EstActif,
