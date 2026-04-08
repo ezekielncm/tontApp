@@ -42,7 +42,7 @@ public sealed class ConnecterUtilisateurCommandHandler
         // Check lockout (5 failed attempts, 15min TTL)
         if (await _loginAttemptService.IsLockedOutAsync(telephoneId.Value, cancellationToken))
         {
-            _logger.LogWarning("Login attempt blocked for locked account {Telephone}", telephoneId.Value);
+            _logger.LogWarning("Login attempt blocked for locked account");
             throw new InvalidOperationException(
                 "Compte temporairement verrouillé après trop de tentatives. Réessayez dans 15 minutes.");
         }
@@ -53,20 +53,20 @@ public sealed class ConnecterUtilisateurCommandHandler
         if (utilisateur is null)
         {
             await _loginAttemptService.RegisterFailedAttemptAsync(telephoneId.Value, cancellationToken);
-            _logger.LogWarning("Login failed: unknown telephone {Telephone}", telephoneId.Value);
+            _logger.LogWarning("Login failed: unknown telephone");
             throw new InvalidOperationException("Numéro de téléphone ou mot de passe incorrect.");
         }
 
         if (!utilisateur.EstActif)
         {
-            _logger.LogWarning("Login attempt on deactivated account {Telephone}", telephoneId.Value);
+            _logger.LogWarning("Login attempt on deactivated account {UserId}", utilisateur.Id.Value);
             throw new InvalidOperationException("Ce compte a été désactivé.");
         }
 
         if (!_passwordHasher.Verify(request.MotDePasse, utilisateur.MotDePasseHash.Value))
         {
             await _loginAttemptService.RegisterFailedAttemptAsync(telephoneId.Value, cancellationToken);
-            _logger.LogWarning("Login failed: invalid password for {Telephone}", telephoneId.Value);
+            _logger.LogWarning("Login failed: invalid password for user {UserId}", utilisateur.Id.Value);
             throw new InvalidOperationException("Numéro de téléphone ou mot de passe incorrect.");
         }
 
@@ -77,7 +77,7 @@ public sealed class ConnecterUtilisateurCommandHandler
         var refreshToken = await _refreshTokenService.GenerateAndStoreAsync(
             utilisateur.Id.Value, cancellationToken);
 
-        _logger.LogInformation("User logged in successfully {Telephone}", telephoneId.Value);
+        _logger.LogInformation("User {UserId} logged in successfully", utilisateur.Id.Value);
 
         return new AuthResult(
             utilisateur.Id.Value,

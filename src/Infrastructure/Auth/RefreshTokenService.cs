@@ -30,7 +30,7 @@ internal sealed class RefreshTokenService : IRefreshTokenService
         var existingToken = await db.StringGetAsync(UserToTokenKey(utilisateurId));
         if (existingToken.HasValue)
         {
-            await db.KeyDeleteAsync(TokenToUserKey(existingToken.ToString()));
+            await db.KeyDeleteAsync(TokenToUserKey((string)existingToken!));
         }
 
         // Store new token → userId mapping
@@ -67,7 +67,7 @@ internal sealed class RefreshTokenService : IRefreshTokenService
         var existingToken = await db.StringGetAsync(UserToTokenKey(utilisateurId));
         if (existingToken.HasValue)
         {
-            await db.KeyDeleteAsync(TokenToUserKey(existingToken.ToString()));
+            await db.KeyDeleteAsync(TokenToUserKey((string)existingToken!));
         }
 
         await db.KeyDeleteAsync(UserToTokenKey(utilisateurId));

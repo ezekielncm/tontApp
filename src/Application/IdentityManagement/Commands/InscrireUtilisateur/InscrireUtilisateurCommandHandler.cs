@@ -63,8 +63,8 @@ public sealed class InscrireUtilisateurCommandHandler
             utilisateur.Id.Value, cancellationToken);
 
         _logger.LogInformation(
-            "User registered successfully with telephone {Telephone}",
-            telephoneId.Value);
+            "User registered successfully with ID {UserId}",
+            utilisateur.Id.Value);
 
         return new AuthResult(
             utilisateur.Id.Value,
