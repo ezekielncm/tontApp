@@ -350,7 +350,7 @@ CREATE TABLE historique_comportement (
     CONSTRAINT fk_hc_profil_credit FOREIGN KEY (profil_credit_id) REFERENCES profils_credit (id),
     CONSTRAINT fk_hc_tontine       FOREIGN KEY (tontine_id)       REFERENCES tontines (id),
     CONSTRAINT fk_hc_tour          FOREIGN KEY (tour_id)          REFERENCES tours_de_role (id),
-    CONSTRAINT fk_hc_versement     FOREIGN KEY (versement_id)     REFERENCES versements (id)
+    CONSTRAINT fk_hc_versement     FOREIGN KEY (versement_id)     REFERENCES versements (id) ON DELETE SET NULL
 );
 
 -- Index: history per credit profile (score recalculation)
