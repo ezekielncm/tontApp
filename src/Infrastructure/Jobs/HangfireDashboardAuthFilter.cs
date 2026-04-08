@@ -1,6 +1,8 @@
 namespace Infrastructure.Jobs;
 
 using Hangfire.Dashboard;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
 /// Authorization filter for Hangfire dashboard: only admin users can access.
@@ -13,10 +15,9 @@ public sealed class HangfireDashboardAuthFilter : IDashboardAuthorizationFilter
         var httpContext = context.GetHttpContext();
 
         // In development, allow unrestricted access
-        var environment = httpContext.RequestServices
-            .GetService(typeof(Microsoft.AspNetCore.Hosting.IWebHostEnvironment)) as Microsoft.AspNetCore.Hosting.IWebHostEnvironment;
+        var environment = httpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
 
-        if (environment?.EnvironmentName == "Development")
+        if (environment.EnvironmentName == "Development")
             return true;
 
         // In production, require authenticated admin user

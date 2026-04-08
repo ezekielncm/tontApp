@@ -47,23 +47,27 @@ public sealed class NotificationService : INotificationService
         string contenu,
         CancellationToken cancellationToken = default)
     {
-        // Rate limit: max 10 SMS/member/day
-        var countToday = await _notificationRepository.CountTodayByDestinataireAsync(
-            destinataireId, cancellationToken);
-
-        if (countToday >= MaxSmsParJourParMembre)
-        {
-            _logger.LogWarning(
-                "Rate limit reached for member {DestinataireId}: {Count} SMS sent today (max {Max}). Notification dropped.",
-                destinataireId, countToday, MaxSmsParJourParMembre);
-            return false;
-        }
-
+        // Critical notifications (payment confirmations) bypass rate limits
         var notification = Notification.CreateFull(
             destinataireId,
             Canal.SMS,
             type,
             contenu);
+
+        if (!notification.EstCritique())
+        {
+            // Rate limit: max 10 SMS/member/day (non-critical only)
+            var countToday = await _notificationRepository.CountTodayByDestinataireAsync(
+                destinataireId, cancellationToken);
+
+            if (countToday >= MaxSmsParJourParMembre)
+            {
+                _logger.LogWarning(
+                    "Rate limit reached for member {DestinataireId}: {Count} SMS sent today (max {Max}). Notification dropped.",
+                    destinataireId, countToday, MaxSmsParJourParMembre);
+                return false;
+            }
+        }
 
         await _notificationRepository.AddAsync(notification, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

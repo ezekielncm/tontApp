@@ -17,6 +17,8 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public sealed class OutboxProcessor
 {
+    private const int BatchSize = 50;
+
     private readonly TontineDbContext _dbContext;
     private readonly ISmsGateway _smsGateway;
     private readonly INotificationRepository _notificationRepository;
@@ -54,7 +56,7 @@ public sealed class OutboxProcessor
         var pendingMessages = await _dbContext.OutboxMessages
             .Where(m => m.ProcessedAt == null)
             .OrderBy(m => m.CreatedAt)
-            .Take(50)
+            .Take(BatchSize)
             .ToListAsync(cancellationToken);
 
         if (pendingMessages.Count == 0)
