@@ -25,8 +25,38 @@ jobs:
       - name: Build
         run: dotnet build tontApp.slnx --configuration Release --no-restore
 
-      - name: Test
-        run: dotnet test tontApp.slnx --configuration Release --no-build --verbosity normal
+      - name: Test with Coverage
+        run: |
+          dotnet test tontApp.slnx \
+            --configuration Release \
+            --no-build \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./coverage \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: Generate Coverage Report
+        run: |
+          reportgenerator \
+            -reports:"./coverage/**/coverage.cobertura.xml" \
+            -targetdir:"./coverage/report" \
+            -reporttypes:"Html;Badges;TextSummary;Cobertura"
+
+      - name: Display Coverage Summary
+        run: cat ./coverage/report/Summary.txt
+
+      - name: Check Domain Coverage Threshold
+        run: python3 scripts/check-domain-coverage.py 70
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ./coverage/report/
 
   docker-build:
     runs-on: ubuntu-latest
