@@ -42,6 +42,10 @@ public static class SmsTemplate
     public static string RappelRenouvellement(string plan, decimal montant, string devise, DateTime dateFin)
         => Truncate($"TontinesApp: Votre abonnement {plan} expire le {dateFin:dd/MM}. Renouvellement: {montant} {devise}.");
 
+    /// <summary>Membre suspendu → notifier le membre</summary>
+    public static string MembreSuspendu(string nomTontine, string motif)
+        => Truncate($"TontinesApp: Vous etes suspendu de {nomTontine}. Motif: {motif}. Contactez le gestionnaire.");
+
     /// <summary>Renouvellement réussi</summary>
     public static string RenouvellementReussi(string plan, DateTime nouvelleDateFin)
         => Truncate($"TontinesApp: Abonnement {plan} renouvele jusqu'au {nouvelleDateFin:dd/MM/yyyy}. Merci!");

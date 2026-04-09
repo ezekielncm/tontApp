@@ -7,6 +7,7 @@ using Application.TontineManagement.Commands.CreateTontine;
 using Application.TontineManagement.Commands.GenererCodeInvitation;
 using Application.TontineManagement.Commands.OuvrirTour;
 using Application.TontineManagement.Commands.RejoindreParCode;
+using Application.TontineManagement.Commands.SuspendreMembre;
 using Application.TontineManagement.Queries.GetTontineById;
 using Infrastructure.Billing;
 using MediatR;
@@ -289,6 +290,41 @@ public class TontineController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Suspend a member from an active tontine with a reason.
+    /// </summary>
+    /// <param name="id">The tontine ID.</param>
+    /// <param name="membreId">The member ID to suspend.</param>
+    /// <param name="request">Suspension details (motif).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>No content on success.</returns>
+    /// <response code="204">Member suspended successfully.</response>
+    /// <response code="400">Validation error or business rule violation.</response>
+    /// <response code="404">Tontine or member not found.</response>
+    [HttpPut("{id:guid}/membres/{membreId:guid}/suspendre")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SuspendreMembre(
+        Guid id,
+        Guid membreId,
+        [FromBody] SuspendreMembreRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new SuspendreMembreCommand(id, membreId, request.Motif);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            if (result.Error!.Contains("not found"))
+                return NotFound(new { error = result.Error });
+
+            return BadRequest(new { error = result.Error });
+        }
+
+        return NoContent();
+    }
 }
 
 /// <summary>
@@ -325,3 +361,8 @@ public sealed record GenererCodeInvitationResponse(string Code, string DeepLink,
 /// Request body for joining a tontine via invitation code.
 /// </summary>
 public sealed record RejoindreParCodeRequest(string Code, string MemberName);
+
+/// <summary>
+/// Request body for suspending a member.
+/// </summary>
+public sealed record SuspendreMembreRequest(string Motif);
