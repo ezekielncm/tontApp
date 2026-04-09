@@ -324,7 +324,7 @@ public class Tontine : AggregateRoot<TontineId>
             return (false, "Member not found.");
 
         if (member.Statut == StatutMembre.Suspendu)
-            return (false, "Le membre est déjà suspendu.");
+            return (false, "Member is already suspended.");
 
         member.Suspendre();
 
