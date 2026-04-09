@@ -7,5 +7,6 @@ public enum AuditAction
 {
     VersementCree,
     VersementConfirme,
-    VersementRejete
+    VersementRejete,
+    VersementManuel
 }
