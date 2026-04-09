@@ -37,3 +37,6 @@ export const PAYMENT_POLL_INTERVAL_MS = 5_000;
 
 /** Maximum payment polling duration in ms (2 minutes) */
 export const PAYMENT_MAX_POLL_DURATION_MS = 2 * 60 * 1_000;
+
+/** AsyncStorage key for onboarding completion flag */
+export const ONBOARDING_STORAGE_KEY = 'onboarding_done';

@@ -14,7 +14,8 @@
 
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
-import { SECURE_STORE_KEYS } from '../config/constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SECURE_STORE_KEYS, ONBOARDING_STORAGE_KEY } from '../config/constants';
 
 const USER_STORE_KEY = 'tontines_user';
 
@@ -37,6 +38,8 @@ export interface AuthState {
   isHydrated: boolean;
   /** Derived: true when we have a user and access token */
   isAuthenticated: boolean;
+  /** Whether the user has completed the onboarding flow */
+  hasSeenOnboarding: boolean;
 }
 
 export interface AuthActions {
@@ -52,6 +55,8 @@ export interface AuthActions {
   hydrate: () => Promise<void>;
   /** Set the FCM/Expo push token */
   setFcmToken: (token: string) => void;
+  /** Mark onboarding as seen */
+  setHasSeenOnboarding: (value: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
@@ -62,6 +67,7 @@ export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
   fcmToken: null,
   isHydrated: false,
   isAuthenticated: false,
+  hasSeenOnboarding: false,
 
   // ─── Actions ───────────────────────────────────────────────────────────────
 
@@ -117,10 +123,11 @@ export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
 
   hydrate: async () => {
     try {
-      const [accessToken, refreshToken, userJson] = await Promise.all([
+      const [accessToken, refreshToken, userJson, onboardingDone] = await Promise.all([
         SecureStore.getItemAsync(SECURE_STORE_KEYS.ACCESS_TOKEN),
         SecureStore.getItemAsync(SECURE_STORE_KEYS.REFRESH_TOKEN),
         SecureStore.getItemAsync(USER_STORE_KEY),
+        AsyncStorage.getItem(ONBOARDING_STORAGE_KEY),
       ]);
 
       const user = userJson ? (JSON.parse(userJson) as UserInfo) : null;
@@ -130,6 +137,7 @@ export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
         refreshToken: refreshToken ?? null,
         user,
         isAuthenticated: !!(user && accessToken),
+        hasSeenOnboarding: onboardingDone === 'true',
         isHydrated: true,
       });
     } catch {
@@ -140,5 +148,9 @@ export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
 
   setFcmToken: (token: string) => {
     set({ fcmToken: token });
+  },
+
+  setHasSeenOnboarding: (value: boolean) => {
+    set({ hasSeenOnboarding: value });
   },
 }));
