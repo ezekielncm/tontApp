@@ -49,43 +49,7 @@ jobs:
         run: cat ./coverage/report/Summary.txt
 
       - name: Check Domain Coverage Threshold
-        run: |
-          # Extract line coverage for Domain namespace from Cobertura XML
-          COVERAGE=$(python3 -c "
-          import xml.etree.ElementTree as ET
-          import glob
-
-          files = glob.glob('./coverage/**/coverage.cobertura.xml', recursive=True)
-          total_lines = 0
-          covered_lines = 0
-
-          for f in files:
-              tree = ET.parse(f)
-              root = tree.getroot()
-              for package in root.findall('.//package'):
-                  name = package.get('name', '')
-                  if 'Domain' in name:
-                      for cls in package.findall('.//class'):
-                          for line in cls.findall('.//line'):
-                              total_lines += 1
-                              if int(line.get('hits', '0')) > 0:
-                                  covered_lines += 1
-
-          if total_lines > 0:
-              pct = (covered_lines / total_lines) * 100
-              print(f'{pct:.1f}')
-          else:
-              print('0.0')
-          ")
-          echo "Domain coverage: ${COVERAGE}%"
-          python3 -c "
-          coverage = float('${COVERAGE}')
-          if coverage < 70:
-              print(f'FAIL: Domain coverage {coverage}% is below 70% threshold')
-              exit(1)
-          else:
-              print(f'PASS: Domain coverage {coverage}% meets 70% threshold')
-          "
+        run: python3 scripts/check-domain-coverage.py 70
 
       - name: Upload Coverage Report
         if: always()
