@@ -55,14 +55,16 @@ export default function Sidebar({ role }: SidebarProps) {
         })}
       </nav>
       <div className="mt-auto pt-8">
-        <form action="/api/auth/logout" method="POST">
-          <button
-            type="submit"
-            className="w-full px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors text-left"
-          >
-            Déconnexion
-          </button>
-        </form>
+        <button
+          type="button"
+          onClick={async () => {
+            await fetch("/api/auth/logout", { method: "POST" });
+            window.location.href = "/login";
+          }}
+          className="w-full px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors text-left"
+        >
+          Déconnexion
+        </button>
       </div>
     </aside>
   );

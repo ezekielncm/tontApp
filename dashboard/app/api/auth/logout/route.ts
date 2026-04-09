@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 export async function POST() {
-  const response = NextResponse.redirect(new URL("/login", process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"));
-  response.cookies.delete("accessToken");
-  response.cookies.delete("refreshToken");
+  const response = NextResponse.json({ success: true });
+  response.cookies.set("accessToken", "", { maxAge: 0, path: "/" });
+  response.cookies.set("refreshToken", "", { maxAge: 0, path: "/api/auth" });
   return response;
 }

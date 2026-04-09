@@ -3,7 +3,7 @@ groups:
     rules:
       # ── CPU > 80% ────────────────────────────────────────────────
       - alert: HighCpuUsage
-        expr: 100 - (avg by(instance) (rate(process_cpu_seconds_total[5m])) * 100) > 80
+        expr: avg by(instance) (rate(process_cpu_seconds_total[5m])) * 100 > 80
         for: 5m
         labels:
           severity: warning
