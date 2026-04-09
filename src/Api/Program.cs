@@ -4,8 +4,10 @@ using Application;
 using Hangfire;
 using Infrastructure;
 using Infrastructure.Jobs;
+using Infrastructure.Monitoring;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Prometheus;
 using Serilog;
 
 namespace Api;
@@ -110,6 +112,10 @@ public class Program
 
             app.UseHttpsRedirection();
 
+            // Prometheus metrics middleware (before auth so all requests are measured)
+            app.UseMiddleware<PrometheusMiddleware>();
+            app.UseHttpMetrics();
+
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -165,6 +171,7 @@ public class Program
 
             app.MapControllers();
             app.MapHealthChecks("/health");
+            app.MapMetrics(); // Prometheus /metrics endpoint
 
             app.Run();
         }
