@@ -309,6 +309,30 @@ public class Tontine : AggregateRoot<TontineId>
         AddDomainEvent(new MemberSuspendedEvent(Id, memberId));
     }
 
+    // ── SuspendreMembre (avec motif) ────────────────────────────────
+    /// <summary>
+    /// Suspends a member with a reason. Returns (true, null) on success,
+    /// or (false, errorMessage) if the member is already suspended or not found.
+    /// </summary>
+    public (bool IsSuccess, string? Error) SuspendreMembre(MemberId membreId, string motif)
+    {
+        if (Status != TontineStatus.Active)
+            return (false, "Members can only be suspended when the tontine is Active.");
+
+        var member = _members.FirstOrDefault(m => m.Id == membreId);
+        if (member is null)
+            return (false, "Member not found.");
+
+        if (member.Statut == StatutMembre.Suspendu)
+            return (false, "Member is already suspended.");
+
+        member.Suspendre();
+
+        AddDomainEvent(new MembreSuspenduEvent(Id, membreId, motif));
+
+        return (true, null);
+    }
+
     // ── Private helpers ─────────────────────────────────────────────
     private Member DetermineNextBeneficiary()
     {
