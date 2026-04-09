@@ -274,7 +274,7 @@ export function versementScenario(data) {
     const versementPayload = JSON.stringify({
       tontineId: tontineData.tontineId,
       tourId: tontineData.tourId,
-      montant: randomIntBetween(1, 50) * 100, // 100-5000 FCFA (multiples of 100)
+      montant: randomIntBetween(1, 50) * 100, // 100-5000 FCFA inclusive (multiples of 100)
       devise: "XOF",
       numeroTelephone: user.telephone,
     });

@@ -343,6 +343,7 @@ do_cleanup() {
     fi
 
     local cutoff_date
+    # GNU date (Linux) format first, BSD date (macOS) as fallback
     cutoff_date=$(date -u -d "${RETENTION_DAYS} days ago" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null \
         || date -u -v-"${RETENTION_DAYS}"d +"%Y-%m-%dT%H:%M:%SZ")
 
