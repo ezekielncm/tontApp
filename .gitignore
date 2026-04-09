@@ -363,4 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # Environment variables (secrets)
-.env
+.env.nuget/
