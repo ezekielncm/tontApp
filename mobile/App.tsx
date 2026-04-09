@@ -12,6 +12,10 @@ import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { QUERY_STALE_TIME_MS, QUERY_CACHE_TIME_MS } from './src/config/constants';
+import { setupNotificationHandler } from './src/services/notificationService';
+
+// Configure foreground notification display before component tree mounts
+setupNotificationHandler();
 
 /**
  * React Query client configured for offline-first reading:

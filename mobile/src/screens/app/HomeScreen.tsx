@@ -4,7 +4,7 @@
  * Features: TontineCard with urgency badge (J-3), skeleton loaders, pull-to-refresh.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import { ErrorBanner } from '../../components/ErrorBanner';
 import { TontineCard } from '../../components/TontineCard';
 import { HomeScreenSkeleton } from '../../components/SkeletonLoader';
 import { colors, spacing, fontSizes } from '../../config/theme';
+import { registerForPushNotifications } from '../../services/notificationService';
 import {
   QUERY_STALE_TIME_MS,
   QUERY_CACHE_TIME_MS,
@@ -42,6 +43,11 @@ export function HomeScreen({ navigation }: Props): React.JSX.Element {
     staleTime: QUERY_STALE_TIME_MS,
     gcTime: QUERY_CACHE_TIME_MS,
   });
+
+  // Request push notification permission on first mount
+  useEffect(() => {
+    void registerForPushNotifications();
+  }, []);
 
   const handleNavigateDetail = useCallback(
     (tontineId: string) => {

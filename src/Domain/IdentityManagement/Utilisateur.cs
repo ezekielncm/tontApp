@@ -12,6 +12,7 @@ public class Utilisateur : AggregateRoot<UtilisateurId>
     public RoleUtilisateur Role { get; private set; }
     public bool EstActif { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public string? FcmToken { get; private set; }
 
     private Utilisateur() : base()
     {
@@ -65,4 +66,6 @@ public class Utilisateur : AggregateRoot<UtilisateurId>
     public void Activer() => EstActif = true;
 
     public void ChangerRole(RoleUtilisateur nouveauRole) => Role = nouveauRole;
+
+    public void MettreAJourFcmToken(string? token) => FcmToken = token;
 }
