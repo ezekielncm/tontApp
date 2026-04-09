@@ -25,8 +25,74 @@ jobs:
       - name: Build
         run: dotnet build tontApp.slnx --configuration Release --no-restore
 
-      - name: Test
-        run: dotnet test tontApp.slnx --configuration Release --no-build --verbosity normal
+      - name: Test with Coverage
+        run: |
+          dotnet test tontApp.slnx \
+            --configuration Release \
+            --no-build \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./coverage \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: Generate Coverage Report
+        run: |
+          reportgenerator \
+            -reports:"./coverage/**/coverage.cobertura.xml" \
+            -targetdir:"./coverage/report" \
+            -reporttypes:"Html;Badges;TextSummary;Cobertura"
+
+      - name: Display Coverage Summary
+        run: cat ./coverage/report/Summary.txt
+
+      - name: Check Domain Coverage Threshold
+        run: |
+          # Extract line coverage for Domain namespace from Cobertura XML
+          COVERAGE=$(python3 -c "
+          import xml.etree.ElementTree as ET
+          import glob
+
+          files = glob.glob('./coverage/**/coverage.cobertura.xml', recursive=True)
+          total_lines = 0
+          covered_lines = 0
+
+          for f in files:
+              tree = ET.parse(f)
+              root = tree.getroot()
+              for package in root.findall('.//package'):
+                  name = package.get('name', '')
+                  if 'Domain' in name:
+                      for cls in package.findall('.//class'):
+                          for line in cls.findall('.//line'):
+                              total_lines += 1
+                              if int(line.get('hits', '0')) > 0:
+                                  covered_lines += 1
+
+          if total_lines > 0:
+              pct = (covered_lines / total_lines) * 100
+              print(f'{pct:.1f}')
+          else:
+              print('0.0')
+          ")
+          echo "Domain coverage: ${COVERAGE}%"
+          python3 -c "
+          coverage = float('${COVERAGE}')
+          if coverage < 70:
+              print(f'FAIL: Domain coverage {coverage}% is below 70% threshold')
+              exit(1)
+          else:
+              print(f'PASS: Domain coverage {coverage}% meets 70% threshold')
+          "
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ./coverage/report/
 
   docker-build:
     runs-on: ubuntu-latest
