@@ -31,6 +31,8 @@ export interface AuthState {
   accessToken: string | null;
   /** JWT refresh token */
   refreshToken: string | null;
+  /** Expo push token (FCM on Android), null if not yet registered */
+  fcmToken: string | null;
   /** Whether the store has been hydrated from SecureStore */
   isHydrated: boolean;
   /** Derived: true when we have a user and access token */
@@ -48,6 +50,8 @@ export interface AuthActions {
   clearAuth: () => void;
   /** Hydrate state from SecureStore on app start */
   hydrate: () => Promise<void>;
+  /** Set the FCM/Expo push token */
+  setFcmToken: (token: string) => void;
 }
 
 export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
@@ -55,6 +59,7 @@ export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
   user: null,
   accessToken: null,
   refreshToken: null,
+  fcmToken: null,
   isHydrated: false,
   isAuthenticated: false,
 
@@ -131,5 +136,9 @@ export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
       // If SecureStore fails, start with clean state
       set({ isHydrated: true });
     }
+  },
+
+  setFcmToken: (token: string) => {
+    set({ fcmToken: token });
   },
 }));

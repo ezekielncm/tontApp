@@ -59,6 +59,11 @@ internal sealed class UtilisateurConfiguration : IEntityTypeConfiguration<Utilis
             .HasColumnName("created_at")
             .IsRequired();
 
+        builder.Property(u => u.FcmToken)
+            .HasColumnName("fcm_token")
+            .HasMaxLength(500)
+            .IsRequired(false);
+
         builder.Ignore(u => u.DomainEvents);
     }
 }
