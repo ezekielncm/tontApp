@@ -192,7 +192,7 @@ const slides: Slide[] = [
     title: 'Paiements sécurisés',
     description:
       'Payez via Orange Money en toute sécurité. ' +
-      'Chaque transaction est tracée et vérifiable grâce à notre piste d\u2019audit complète.',
+      'Chaque transaction est tracée et vérifiable grâce à notre piste d\'audit complète.',
     illustration: <PaymentIcon />,
   },
   {
