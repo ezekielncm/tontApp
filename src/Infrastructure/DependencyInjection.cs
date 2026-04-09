@@ -6,6 +6,8 @@ using Application.IdentityManagement.Services;
 using Application.PaymentManagement.Services;
 using Domain.BillingManagement.Repositories;
 using Domain.Common;
+using Domain.CreditScoringManagement.Ports;
+using Domain.CreditScoringManagement.Repositories;
 using Domain.IdentityManagement.Repositories;
 using Domain.NotificationManagement.Ports;
 using Domain.NotificationManagement.Repositories;
@@ -16,6 +18,7 @@ using Hangfire;
 using Hangfire.PostgreSql;
 using Infrastructure.Auth;
 using Infrastructure.Billing;
+using Infrastructure.CreditScoring;
 using Infrastructure.Jobs;
 using Infrastructure.Payment;
 using Infrastructure.Persistence;
@@ -46,6 +49,10 @@ public static class DependencyInjection
         services.AddScoped<IUtilisateurRepository, UtilisateurRepository>();
         services.AddScoped<IAbonnementRepository, AbonnementRepository>();
         services.AddScoped<IPlanAbonnementRepository, PlanAbonnementRepository>();
+
+        // Credit scoring
+        services.AddScoped<IProfilCreditRepository, ProfilCreditRepository>();
+        services.AddScoped<IScoringEngine, RegleMetierScoringEngine>();
 
         // Billing cache service (Redis-backed)
         services.AddScoped<IBillingCacheService, BillingCacheService>();
