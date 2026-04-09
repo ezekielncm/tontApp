@@ -86,28 +86,28 @@ internal sealed class TontineConfiguration : IEntityTypeConfiguration<Tontine>
         });
 
         // Members navigation
-        builder.HasMany<Member>("_members")
+        builder.HasMany(t => t.Members)
             .WithOne()
             .HasForeignKey("tontine_id")
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Navigation("_members").UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(t => t.Members).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         // Rounds navigation
-        builder.HasMany<Round>("_rounds")
+        builder.HasMany(t => t.Rounds)
             .WithOne()
             .HasForeignKey("tontine_id")
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Navigation("_rounds").UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(t => t.Rounds).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         // Invitations navigation
-        builder.HasMany<Invitation>("_invitations")
+        builder.HasMany(t => t.Invitations)
             .WithOne()
             .HasForeignKey("tontine_id")
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Navigation("_invitations").UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(t => t.Invitations).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.Ignore(t => t.DomainEvents);
 

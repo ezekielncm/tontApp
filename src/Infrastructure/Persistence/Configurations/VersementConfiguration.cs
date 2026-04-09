@@ -87,12 +87,12 @@ internal sealed class VersementConfiguration : IEntityTypeConfiguration<Versemen
             .HasColumnName("confirmed_at");
 
         // Audit trail navigation (private backing field)
-        builder.HasMany<AuditEntry>("_auditTrail")
+        builder.HasMany(v => v.AuditTrail)
             .WithOne()
             .HasForeignKey(e => e.VersementId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Navigation("_auditTrail").UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Navigation(v => v.AuditTrail).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.Ignore(v => v.DomainEvents);
 

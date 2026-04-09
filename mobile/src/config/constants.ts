@@ -6,7 +6,7 @@
 
 /** Base URL for the API – override via EXPO_PUBLIC_API_URL env var */
 export const API_BASE_URL: string =
-  process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:5000';
+  process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.11.101:8080';
 
 /** API version prefix */
 export const API_PREFIX = '/api/v1';

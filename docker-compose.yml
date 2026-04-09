@@ -10,11 +10,11 @@ services:
       - "${API_PORT:-8080}:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
-      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - ConnectionStrings__Redis=redis:6379,password=${REDIS_PASSWORD},abortConnect=false
-      - ConnectionStrings__Hangfire=Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
-      - Jwt__SecretKey=${JWT_SECRET_KEY}
+      - ConnectionStrings__HangfireConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - Jwt__Secret=${JWT_SECRET_KEY}
       - Jwt__Issuer=${JWT_ISSUER:-TontinesApp}
       - Jwt__Audience=${JWT_AUDIENCE:-TontinesApp}
       - AfricasTalking__ApiKey=${AFRICASTALKING_API_KEY}
@@ -42,10 +42,10 @@ services:
     image: ${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${IMAGE_TAG:-latest}
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
-      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - ConnectionStrings__Redis=redis:6379,password=${REDIS_PASSWORD},abortConnect=false
-      - ConnectionStrings__Hangfire=Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - ConnectionStrings__HangfireConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - Hangfire__IsWorkerOnly=true
       - AfricasTalking__ApiKey=${AFRICASTALKING_API_KEY}
       - AfricasTalking__Username=${AFRICASTALKING_USERNAME}
@@ -67,9 +67,9 @@ services:
       start_period: 40s
     networks:
       - tontapp-network
-    depends_on:
-      postgres:
-        condition: service_healthy
+    #depends_on:
+      #postgres:
+        #condition: service_healthy
 
   postgres:
     image: postgres:16-alpine
@@ -90,6 +90,25 @@ services:
       start_period: 30s
     networks:
       - tontapp-network
+    
+  # ===========================================================================
+  # PGADMIN - PostgreSQL Management UI (Optional)
+  # ===========================================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: tontapp-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@tontapp.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - tontapp-network
+    depends_on:
+      - postgres
 
   redis:
     image: redis:7-alpine
@@ -176,6 +195,8 @@ volumes:
     name: tontapp-prometheus-data
   grafana-data:
     name: tontapp-grafana-data
+  pgadmin_data:
+    name: tontapp-pgadmin-data
 
 networks:
   tontapp-network:

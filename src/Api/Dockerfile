@@ -8,8 +8,7 @@ COPY ["src/Domain/Domain.csproj", "src/Domain/"]
 COPY ["src/Application/Application.csproj", "src/Application/"]
 COPY ["src/Infrastructure/Infrastructure.csproj", "src/Infrastructure/"]
 COPY ["src/Api/Api.csproj", "src/Api/"]
-COPY ["tontApp.slnx", "./"]
-RUN dotnet restore "tontApp.slnx"
+RUN dotnet restore "src/Api/Api.csproj"
 
 # Copy everything and publish
 COPY . .

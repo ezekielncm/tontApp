@@ -14,6 +14,9 @@ public sealed class Reglement : ValueObject
     public ModeAttribution ModeAttribution { get; }
     public int MinMembresActivation { get; }
 
+    // Required by EF Core for owned type binding
+    private Reglement() { }
+
     private Reglement(
         ContributionAmount contributionAmount,
         TontinePeriodicity periodicity,

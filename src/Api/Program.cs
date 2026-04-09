@@ -5,7 +5,9 @@ using Hangfire;
 using Infrastructure;
 using Infrastructure.Jobs;
 using Infrastructure.Monitoring;
+using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Prometheus;
 using Serilog;
@@ -101,6 +103,13 @@ public class Program
             builder.Services.AddHealthChecks();
 
             var app = builder.Build();
+
+            // ── Apply pending EF Core migrations ───────────────────────
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<TontineDbContext>();
+                db.Database.Migrate();
+            }
 
             // ── HTTP pipeline ──────────────────────────────────────────
             if (app.Environment.IsDevelopment())
