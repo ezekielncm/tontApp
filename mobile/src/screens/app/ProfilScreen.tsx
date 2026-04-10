@@ -2,7 +2,7 @@
  * Profile screen – displays user info, credit score badge, and provides logout.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -10,20 +10,28 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  Linking,
+  Switch,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AppStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/authStore';
 import { useAuth } from '../../hooks/useAuth';
 import { useProfilCredit } from '../../hooks/useProfilCredit';
+import { tontineService } from '../../services/tontineService';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ScoreBadge } from '../../components/ScoreBadge';
 import { colors, spacing, fontSizes, borderRadius } from '../../config/theme';
 
 export function ProfilScreen(): React.JSX.Element {
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const user = useAuthStore((s) => s.user);
   const { logout, isLoading: isLoggingOut } = useAuth();
   const { data: profilCredit, isLoading: isLoadingCredit } = useProfilCredit(
     user?.id,
   );
+  const [smsOptOut, setSmsOptOut] = useState(false);
 
   const handleLogout = useCallback(() => {
     Alert.alert(
@@ -39,6 +47,24 @@ export function ProfilScreen(): React.JSX.Element {
       ],
     );
   }, [logout]);
+
+  const handleWhatsAppSupport = useCallback(() => {
+    Linking.openURL('https://wa.me/221771234567?text=Bonjour%2C%20j%27ai%20besoin%20d%27aide%20avec%20TontinesApp');
+  }, []);
+
+  const handleNavigateHistorique = useCallback(() => {
+    navigation.navigate('HistoriqueVersements', {});
+  }, [navigation]);
+
+  const handleToggleSms = useCallback(async (value: boolean) => {
+    setSmsOptOut(value);
+    try {
+      await tontineService.updateSmsPreferences({ optOut: value });
+    } catch {
+      setSmsOptOut(!value);
+      Alert.alert('Erreur', 'Impossible de mettre à jour les préférences SMS.');
+    }
+  }, []);
 
   return (
     <ScrollView
@@ -128,6 +154,36 @@ export function ProfilScreen(): React.JSX.Element {
           </>
         )}
       </View>
+
+      {/* Preferences */}
+      <View style={styles.preferencesCard}>
+        <View style={styles.preferenceRow}>
+          <View style={styles.preferenceInfo}>
+            <Text style={styles.preferenceLabel}>Désactiver SMS de rappel</Text>
+            <Text style={styles.preferenceDesc}>
+              Ne plus recevoir de rappels par SMS
+            </Text>
+          </View>
+          <Switch
+            value={smsOptOut}
+            onValueChange={handleToggleSms}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor={smsOptOut ? colors.primaryLight : '#f4f3f4'}
+          />
+        </View>
+      </View>
+
+      <PrimaryButton
+        title="📜 Historique de mes versements"
+        onPress={handleNavigateHistorique}
+        style={styles.historiqueButton}
+      />
+
+      <PrimaryButton
+        title="💬 Support WhatsApp"
+        onPress={handleWhatsAppSupport}
+        style={styles.whatsappButton}
+      />
 
       <PrimaryButton
         title="Se déconnecter"
@@ -262,5 +318,39 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     backgroundColor: colors.error,
+    marginTop: spacing.sm,
+  },
+  whatsappButton: {
+    backgroundColor: '#25D366',
+  },
+  historiqueButton: {
+    marginBottom: spacing.md,
+  },
+  preferencesCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.lg,
+  },
+  preferenceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  preferenceInfo: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  preferenceLabel: {
+    fontSize: fontSizes.md,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: 2,
+  },
+  preferenceDesc: {
+    fontSize: fontSizes.xs,
+    color: colors.textSecondary,
   },
 });

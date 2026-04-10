@@ -1,5 +1,6 @@
 using Application.NotificationManagement.EventHandlers;
 using Application.NotificationManagement.Services;
+using Domain.IdentityManagement.ValueObjects;
 using Domain.NotificationManagement.ValueObjects;
 using Domain.TontineManagement;
 using Domain.TontineManagement.Events;
@@ -102,6 +103,7 @@ public class TourOuvertEventHandlerTests
             ContributionAmount.Create(5000, "XOF"),
             TontinePeriodicity.Monthly,
             10,
+            UtilisateurId.Create(),
             ModeAttribution.Sequentiel);
 
         // Use reflection to set the Id since it's generated in Create

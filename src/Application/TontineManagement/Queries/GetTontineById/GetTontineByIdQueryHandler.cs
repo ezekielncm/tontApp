@@ -31,6 +31,7 @@ public sealed class GetTontineByIdQueryHandler : IQueryHandler<GetTontineByIdQue
             tontine.Status.ToString(),
             tontine.MaxMembers,
             tontine.Members.Count,
+            tontine.GestionnaireId.Value,
             tontine.CreatedAt);
     }
 }

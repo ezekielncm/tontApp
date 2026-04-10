@@ -11,8 +11,8 @@ public static class SmsTemplate
         => Truncate($"TontinesApp: Tour {numeroTour} de {nomTontine} est ouvert. Vous etes le beneficiaire. Bonne reception!");
 
     /// <summary>Versement confirmé → accusé de réception</summary>
-    public static string VersementConfirme(decimal montant, string devise, string nomTontine)
-        => Truncate($"TontinesApp: Paiement de {montant} {devise} recu pour {nomTontine}. Merci!");
+    public static string VersementConfirme(decimal montant, string devise, string nomTontine, string reference)
+        => Truncate($"TontinesApp: Paiement de {montant} {devise} recu pour {nomTontine}. Ref: {reference}. Merci!");
 
     /// <summary>Rappel J-3 avant échéance</summary>
     public static string RappelJ3(string nomTontine, decimal montant, string devise)
@@ -25,6 +25,10 @@ public static class SmsTemplate
     /// <summary>Paiement en retard</summary>
     public static string PaiementEnRetard(string nomTontine, decimal montant, string devise)
         => Truncate($"TontinesApp: Cotisation de {montant} {devise} pour {nomTontine} en retard. Veuillez payer au plus vite.");
+
+    /// <summary>Retard paiement → notifier le gestionnaire</summary>
+    public static string RetardPourGestionnaire(string nomTontine, decimal montant, string devise)
+        => Truncate($"TontinesApp: Retard de paiement de {montant} {devise} dans {nomTontine}. Verifiez la situation.");
 
     /// <summary>Récapitulatif hebdomadaire</summary>
     public static string RecapHebdomadaire(string nomTontine, int membresAJour, int totalMembres)

@@ -8,16 +8,19 @@ import type {
   AuthResult,
   LoginRequest,
   RegisterRequest,
+  RegisterResult,
   RefreshRequest,
+  VerifierOtpRequest,
 } from '../types/api';
 
 export const authService = {
   /**
    * POST /auth/register
    * Register a new user with phone, name, and password.
+   * Returns UtilisateurId and message — OTP is sent via SMS.
    */
-  async register(data: RegisterRequest): Promise<AuthResult> {
-    const response = await apiClient.post<AuthResult>('/auth/register', data);
+  async register(data: RegisterRequest): Promise<RegisterResult> {
+    const response = await apiClient.post<RegisterResult>('/auth/register', data);
     return response.data;
   },
 
@@ -45,5 +48,14 @@ export const authService = {
    */
   async logout(): Promise<void> {
     await apiClient.post('/auth/logout');
+  },
+
+  /**
+   * POST /auth/verifier-otp
+   * Verify OTP code sent during registration and obtain JWT tokens.
+   */
+  async verifierOtp(data: VerifierOtpRequest): Promise<AuthResult> {
+    const response = await apiClient.post<AuthResult>('/auth/verifier-otp', data);
+    return response.data;
   },
 } as const;

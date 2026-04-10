@@ -1,4 +1,5 @@
-﻿using Domain.TontineManagement;
+﻿using Domain.IdentityManagement.ValueObjects;
+using Domain.TontineManagement;
 using Domain.TontineManagement.Events;
 using Domain.TontineManagement.ValueObjects;
 
@@ -6,6 +7,8 @@ namespace DomainUnitsTest;
 
 public class TontineTests
 {
+    private static readonly UtilisateurId TestGestionnaireId = UtilisateurId.Create();
+
     private static Tontine CreateDefaultTontine(
         string name = "Test Tontine",
         decimal amount = 100m,
@@ -13,7 +16,7 @@ public class TontineTests
         int maxMembers = 5)
     {
         var contribution = ContributionAmount.Create(amount, currency);
-        return Tontine.Create(name, "A test tontine", contribution, TontinePeriodicity.Monthly, maxMembers);
+        return Tontine.Create(name, "A test tontine", contribution, TontinePeriodicity.Monthly, maxMembers, TestGestionnaireId);
     }
 
     [Fact]
@@ -45,7 +48,7 @@ public class TontineTests
         var contribution = ContributionAmount.Create(100, "XOF");
 
         Assert.Throws<ArgumentException>(() =>
-            Tontine.Create(name!, null, contribution, TontinePeriodicity.Monthly, 5));
+            Tontine.Create(name!, null, contribution, TontinePeriodicity.Monthly, 5, TestGestionnaireId));
     }
 
     [Theory]
@@ -57,7 +60,7 @@ public class TontineTests
         var contribution = ContributionAmount.Create(100, "XOF");
 
         Assert.Throws<ArgumentException>(() =>
-            Tontine.Create("Test", null, contribution, TontinePeriodicity.Monthly, maxMembers));
+            Tontine.Create("Test", null, contribution, TontinePeriodicity.Monthly, maxMembers, TestGestionnaireId));
     }
 
     [Fact]

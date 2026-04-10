@@ -1,4 +1,6 @@
 # Development overrides — use with: docker compose -f docker-compose.yml -f docker-compose.override.yml up
+# NOTE: Si le schéma DB change, lancez d'abord: docker compose down -v
+#       pour supprimer le volume PostgreSQL et repartir d'une base propre.
 services:
   api:
     build:
@@ -10,6 +12,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - ADMIN_PHONE=${ADMIN_PHONE:-+22370000000}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-Admin123!}
     ports:
       - "8080:8080"
 

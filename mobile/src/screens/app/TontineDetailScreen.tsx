@@ -76,6 +76,20 @@ export function TontineDetailScreen({
     }
   }, [navigation, tontineId, tontine]);
 
+  const handleNavigateInvitation = useCallback(() => {
+    if (tontine) {
+      navigation.navigate('Invitation', {
+        tontineId,
+        tontineNom: tontine.nom,
+        montant: tontine.montantCotisation,
+      });
+    }
+  }, [navigation, tontineId, tontine]);
+
+  const handleNavigateHistorique = useCallback(() => {
+    navigation.navigate('HistoriqueVersements', { tontineId });
+  }, [navigation, tontineId]);
+
   const renderMember = useCallback(
     (member: TontineMember) => (
       <View key={member.id} style={styles.memberRow}>
@@ -192,10 +206,24 @@ export function TontineDetailScreen({
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
-          Membres ({tontine.membres.length})
+          Membres ({tontine.membres?.length ?? 0})
         </Text>
-        {tontine.membres.map(renderMember)}
+        {tontine.membres?.map(renderMember)}
       </View>
+
+      {isGestionnaire && tontine.status === 'Draft' ? (
+        <PrimaryButton
+          title="📨 Inviter des membres"
+          onPress={handleNavigateInvitation}
+          style={styles.actionButton}
+        />
+      ) : null}
+
+      <PrimaryButton
+        title="📜 Historique de mes versements"
+        onPress={handleNavigateHistorique}
+        style={styles.actionButton}
+      />
     </ScrollView>
   );
 }

@@ -13,6 +13,7 @@ public class Utilisateur : AggregateRoot<UtilisateurId>
     public bool EstActif { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public string? FcmToken { get; private set; }
+    public bool SmsOptOut { get; private set; }
 
     private Utilisateur() : base()
     {
@@ -68,4 +69,8 @@ public class Utilisateur : AggregateRoot<UtilisateurId>
     public void ChangerRole(RoleUtilisateur nouveauRole) => Role = nouveauRole;
 
     public void MettreAJourFcmToken(string? token) => FcmToken = token;
+
+    public void DesactiverSms() => SmsOptOut = true;
+
+    public void ReactiverSms() => SmsOptOut = false;
 }

@@ -44,6 +44,13 @@ internal sealed class TontineConfiguration : IEntityTypeConfiguration<Tontine>
         builder.Property(t => t.StartedAt)
             .HasColumnName("started_at");
 
+        builder.Property(t => t.GestionnaireId)
+            .HasColumnName("gestionnaire_id")
+            .HasConversion(
+                id => id.Value,
+                value => UtilisateurId.From(value))
+            .IsRequired();
+
         builder.OwnsOne(t => t.Reglement, rb =>
         {
             rb.OwnsOne(r => r.ContributionAmount, cab =>

@@ -16,17 +16,19 @@ import { AxiosError } from 'axios';
 import { authService } from '../services/authService';
 import { useAuthStore, type UserInfo } from '../store/authStore';
 import { useTontineStore } from '../store/tontineStore';
-import type { ApiError, AuthResult } from '../types/api';
+import type { ApiError, AuthResult, RegisterResult } from '../types/api';
 
 interface UseAuthReturn {
   /** Log in with phone and password */
   login: (telephone: string, motDePasse: string) => Promise<boolean>;
-  /** Register a new account */
+  /** Register a new account (sends OTP, does not authenticate) */
   register: (
     telephone: string,
     nom: string,
     motDePasse: string,
   ) => Promise<boolean>;
+  /** Verify OTP and authenticate */
+  verifierOtp: (telephone: string, nom: string, code: string) => Promise<boolean>;
   /** Log out (server revoke + local clear) */
   logout: () => Promise<void>;
   /** Manually refresh the token pair */
@@ -118,11 +120,29 @@ export function useAuth(): UseAuthReturn {
       setIsLoading(true);
       setError(null);
       try {
-        const result = await authService.register({
+        await authService.register({
           telephone,
           nom,
           motDePasse,
         });
+        // OTP sent – caller should navigate to VerifierOtp screen
+        return true;
+      } catch (err: unknown) {
+        setError(extractErrorMessage(err));
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [extractErrorMessage],
+  );
+
+  const verifierOtp = useCallback(
+    async (telephone: string, nom: string, code: string): Promise<boolean> => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const result = await authService.verifierOtp({ telephone, code });
         const user = buildUser(result, telephone, nom);
         setAuth(user, result.accessToken, result.refreshToken);
         return true;
@@ -175,6 +195,7 @@ export function useAuth(): UseAuthReturn {
   return {
     login,
     register,
+    verifierOtp,
     logout,
     refreshToken,
     isLoading,

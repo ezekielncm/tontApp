@@ -8,11 +8,13 @@ using Moq;
 public class DeconnecterCommandHandlerTests
 {
     private readonly Mock<IRefreshTokenService> _refreshTokenServiceMock = new();
+    private readonly Mock<IAccessTokenBlacklistService> _blacklistServiceMock = new();
     private readonly Mock<ILogger<DeconnecterCommandHandler>> _loggerMock = new();
 
     private DeconnecterCommandHandler CreateHandler() =>
         new(
             _refreshTokenServiceMock.Object,
+            _blacklistServiceMock.Object,
             _loggerMock.Object);
 
     [Fact]

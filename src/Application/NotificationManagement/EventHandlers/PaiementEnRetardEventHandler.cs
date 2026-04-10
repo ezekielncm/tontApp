@@ -36,6 +36,7 @@ public sealed class PaiementEnRetardEventHandler : INotificationHandler<Paiement
         var tontine = await _tontineRepository.GetByIdReadOnlyAsync(notification.TontineId, cancellationToken);
         var nomTontine = tontine?.Name ?? "votre tontine";
 
+        // Notifier le membre en retard
         var message = SmsTemplate.PaiementEnRetard(nomTontine, notification.Montant, notification.Devise);
 
         await _notificationService.PlanifierNotificationAsync(
@@ -43,5 +44,18 @@ public sealed class PaiementEnRetardEventHandler : INotificationHandler<Paiement
             NotificationType.RappelPaiement,
             message,
             cancellationToken);
+
+        // Notifier le gestionnaire de la tontine
+        if (tontine?.GestionnaireId is not null)
+        {
+            var messageGestionnaire = SmsTemplate.RetardPourGestionnaire(
+                nomTontine, notification.Montant, notification.Devise);
+
+            await _notificationService.PlanifierNotificationAsync(
+                tontine.GestionnaireId.Value.ToString(),
+                NotificationType.RappelPaiement,
+                messageGestionnaire,
+                cancellationToken);
+        }
     }
 }

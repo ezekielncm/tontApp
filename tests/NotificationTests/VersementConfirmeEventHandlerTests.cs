@@ -1,5 +1,6 @@
 using Application.NotificationManagement.EventHandlers;
 using Application.NotificationManagement.Services;
+using Domain.IdentityManagement.ValueObjects;
 using Domain.NotificationManagement.ValueObjects;
 using Domain.PaymentManagement.Events;
 using Domain.PaymentManagement.ValueObjects;
@@ -150,6 +151,7 @@ public class VersementConfirmeEventHandlerTests
             ContributionAmount.Create(5000, "XOF"),
             TontinePeriodicity.Monthly,
             10,
+            UtilisateurId.Create(),
             ModeAttribution.Sequentiel);
 
         var idProperty = typeof(Domain.Common.Entity<TontineId>).GetProperty("Id");

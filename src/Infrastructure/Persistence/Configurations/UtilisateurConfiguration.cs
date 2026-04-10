@@ -64,6 +64,11 @@ internal sealed class UtilisateurConfiguration : IEntityTypeConfiguration<Utilis
             .HasMaxLength(500)
             .IsRequired(false);
 
+        builder.Property(u => u.SmsOptOut)
+            .HasColumnName("sms_opt_out")
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.Ignore(u => u.DomainEvents);
     }
 }

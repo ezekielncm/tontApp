@@ -10,7 +10,12 @@ import { HomeScreen } from '../screens/app/HomeScreen';
 import { TontineDetailScreen } from '../screens/app/TontineDetailScreen';
 import { PaiementScreen } from '../screens/app/PaiementScreen';
 import { GestionnaireScreen } from '../screens/app/GestionnaireScreen';
+import { CreateTontineScreen } from '../screens/app/CreateTontineScreen';
 import { ProfilScreen } from '../screens/app/ProfilScreen';
+import { RejoindreParCodeScreen } from '../screens/app/RejoindreParCodeScreen';
+import { InvitationScreen } from '../screens/app/InvitationScreen';
+import { HistoriqueVersementsScreen } from '../screens/app/HistoriqueVersementsScreen';
+import { NotificationsScreen } from '../screens/app/NotificationsScreen';
 import type { AppStackParamList } from './types';
 import { colors } from '../config/theme';
 
@@ -49,9 +54,34 @@ export function AppStack(): React.JSX.Element {
         options={{ title: 'Gestion du tour' }}
       />
       <Stack.Screen
+        name="CreateTontine"
+        component={CreateTontineScreen}
+        options={{ title: 'Nouvelle Tontine' }}
+      />
+      <Stack.Screen
         name="Profil"
         component={ProfilScreen}
         options={{ title: 'Mon Profil' }}
+      />
+      <Stack.Screen
+        name="RejoindreParCode"
+        component={RejoindreParCodeScreen}
+        options={{ title: 'Rejoindre une tontine' }}
+      />
+      <Stack.Screen
+        name="Invitation"
+        component={InvitationScreen}
+        options={{ title: 'Inviter des membres' }}
+      />
+      <Stack.Screen
+        name="HistoriqueVersements"
+        component={HistoriqueVersementsScreen}
+        options={{ title: 'Mes Versements' }}
+      />
+      <Stack.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{ title: 'Notifications' }}
       />
     </Stack.Navigator>
   );

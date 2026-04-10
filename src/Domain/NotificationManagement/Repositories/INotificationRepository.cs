@@ -6,6 +6,7 @@ public interface INotificationRepository
 {
     Task<Notification?> GetByIdAsync(NotificationId id, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Notification>> GetPendingAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Notification>> GetAllAsync(CancellationToken cancellationToken = default);
     Task AddAsync(Notification notification, CancellationToken cancellationToken = default);
     Task UpdateAsync(Notification notification, CancellationToken cancellationToken = default);
 

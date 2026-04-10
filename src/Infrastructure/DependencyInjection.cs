@@ -4,6 +4,7 @@ using Application.BillingManagement.Services;
 using Application.NotificationManagement.Services;
 using Application.IdentityManagement.Services;
 using Application.PaymentManagement.Services;
+using Application.TontineManagement.Services;
 using Domain.BillingManagement.Repositories;
 using Domain.Common;
 using Domain.CreditScoringManagement.Ports;
@@ -19,6 +20,7 @@ using Hangfire.PostgreSql;
 using Infrastructure.Auth;
 using Infrastructure.Billing;
 using Infrastructure.CreditScoring;
+using Infrastructure.Export;
 using Infrastructure.Jobs;
 using Infrastructure.Payment;
 using Infrastructure.Persistence;
@@ -27,13 +29,15 @@ using Infrastructure.Sms;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using StackExchange.Redis;
 
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         // EF Core - PostgreSQL
         services.AddDbContext<TontineDbContext>(options =>
@@ -56,6 +60,9 @@ public static class DependencyInjection
 
         // Billing cache service (Redis-backed)
         services.AddScoped<IBillingCacheService, BillingCacheService>();
+
+        // PDF export service
+        services.AddScoped<ITontineExportService, TontineExportService>();
 
         // Audit trail service
         services.AddScoped<IAuditTrailService, AuditTrailService>();
@@ -91,16 +98,24 @@ public static class DependencyInjection
         services.Configure<AfricasTalkingSmsOptions>(
             configuration.GetSection(AfricasTalkingSmsOptions.SectionName));
 
-        services.AddHttpClient<ISmsGateway, AfricasTalkingSmsAdapter>((sp, client) =>
+        // SMS gateway — fake in Development, real otherwise
+        if (environment.IsDevelopment())
         {
-            var smsOptions = configuration.GetSection(AfricasTalkingSmsOptions.SectionName)
-                .Get<AfricasTalkingSmsOptions>() ?? new AfricasTalkingSmsOptions();
+            services.AddSingleton<ISmsGateway, FakeSmsGateway>();
+        }
+        else
+        {
+            services.AddHttpClient<ISmsGateway, AfricasTalkingSmsAdapter>((sp, client) =>
+            {
+                var smsOptions = configuration.GetSection(AfricasTalkingSmsOptions.SectionName)
+                    .Get<AfricasTalkingSmsOptions>() ?? new AfricasTalkingSmsOptions();
 
-            client.BaseAddress = new Uri(smsOptions.BaseUrl);
-            client.DefaultRequestHeaders.Add("Accept", "application/json");
-            client.DefaultRequestHeaders.Add("apiKey", smsOptions.ApiKey);
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
+                client.BaseAddress = new Uri(smsOptions.BaseUrl);
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+                client.DefaultRequestHeaders.Add("apiKey", smsOptions.ApiKey);
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+        }
 
         // Redis – connection multiplexer (singleton) + distributed cache
         var redisConnectionString = configuration.GetConnectionString("Redis") ?? "localhost:6379";
@@ -118,6 +133,8 @@ public static class DependencyInjection
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<ILoginAttemptService, LoginAttemptService>();
+        services.AddSingleton<IAccessTokenBlacklistService, AccessTokenBlacklistService>();
+        services.AddSingleton<IOtpService, OtpService>();
 
         // Hangfire background jobs
         services.AddHangfire(config => config

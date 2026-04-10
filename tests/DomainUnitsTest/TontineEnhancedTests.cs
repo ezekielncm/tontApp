@@ -8,6 +8,8 @@ namespace DomainUnitsTest;
 
 public class TontineEnhancedTests
 {
+    private static readonly UtilisateurId TestGestionnaireId = UtilisateurId.Create();
+
     private static Tontine CreateDefaultTontine(
         string name = "Test Tontine",
         decimal amount = 100m,
@@ -16,7 +18,7 @@ public class TontineEnhancedTests
         ModeAttribution modeAttribution = ModeAttribution.Sequentiel)
     {
         var contribution = ContributionAmount.Create(amount, currency);
-        return Tontine.Create(name, "A test tontine", contribution, TontinePeriodicity.Monthly, maxMembers, modeAttribution);
+        return Tontine.Create(name, "A test tontine", contribution, TontinePeriodicity.Monthly, maxMembers, TestGestionnaireId, modeAttribution);
     }
 
     [Fact]

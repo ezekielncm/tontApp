@@ -1,45 +1,44 @@
 namespace Application.IdentityManagement.Commands.InscrireUtilisateur;
 
 using Application.Common;
-using Application.IdentityManagement.DTOs;
 using Application.IdentityManagement.Services;
 using Domain.Common;
 using Domain.IdentityManagement;
 using Domain.IdentityManagement.Repositories;
 using Domain.IdentityManagement.ValueObjects;
+using Domain.NotificationManagement.Ports;
 using Microsoft.Extensions.Logging;
 
 public sealed class InscrireUtilisateurCommandHandler
-    : ICommandHandler<InscrireUtilisateurCommand, AuthResult>
+    : ICommandHandler<InscrireUtilisateurCommand, InscrireUtilisateurResult>
 {
     private readonly IUtilisateurRepository _utilisateurRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasher _passwordHasher;
-    private readonly IJwtService _jwtService;
-    private readonly IRefreshTokenService _refreshTokenService;
+    private readonly IOtpService _otpService;
+    private readonly ISmsGateway _smsGateway;
     private readonly ILogger<InscrireUtilisateurCommandHandler> _logger;
 
     public InscrireUtilisateurCommandHandler(
         IUtilisateurRepository utilisateurRepository,
         IUnitOfWork unitOfWork,
         IPasswordHasher passwordHasher,
-        IJwtService jwtService,
-        IRefreshTokenService refreshTokenService,
+        IOtpService otpService,
+        ISmsGateway smsGateway,
         ILogger<InscrireUtilisateurCommandHandler> logger)
     {
         _utilisateurRepository = utilisateurRepository;
         _unitOfWork = unitOfWork;
         _passwordHasher = passwordHasher;
-        _jwtService = jwtService;
-        _refreshTokenService = refreshTokenService;
+        _otpService = otpService;
+        _smsGateway = smsGateway;
         _logger = logger;
     }
 
-    public async Task<AuthResult> Handle(
+    public async Task<InscrireUtilisateurResult> Handle(
         InscrireUtilisateurCommand request,
         CancellationToken cancellationToken)
     {
-        // Normalize phone to E.164
         var telephoneId = TelephoneId.Create(request.Telephone);
 
         var exists = await _utilisateurRepository.ExistsByTelephoneAsync(
@@ -58,18 +57,19 @@ public sealed class InscrireUtilisateurCommandHandler
         await _utilisateurRepository.AddAsync(utilisateur, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var accessToken = _jwtService.GenerateAccessToken(utilisateur);
-        var refreshToken = await _refreshTokenService.GenerateAndStoreAsync(
-            utilisateur.Id.Value, cancellationToken);
+        // Generate OTP and send via SMS
+        var otp = await _otpService.GenerateAndStoreAsync(telephoneId.Value, cancellationToken);
+        await _smsGateway.EnvoyerAsync(
+            telephoneId.Value,
+            $"Votre code de vérification TontinesApp : {otp}. Valide 5 minutes.",
+            cancellationToken);
 
         _logger.LogInformation(
-            "User registered successfully with ID {UserId}",
-            utilisateur.Id.Value);
+            "User registered with ID {UserId}, OTP sent to {Telephone}",
+            utilisateur.Id.Value, telephoneId.Value);
 
-        return new AuthResult(
+        return new InscrireUtilisateurResult(
             utilisateur.Id.Value,
-            accessToken,
-            refreshToken,
-            DateTime.UtcNow.AddHours(24));
+            "Inscription réussie. Un code OTP a été envoyé par SMS.");
     }
 }

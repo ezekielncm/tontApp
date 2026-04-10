@@ -3,6 +3,11 @@
  */
 
 /** Mirrors Application.IdentityManagement.DTOs.AuthResult */
+export interface RegisterResult {
+  utilisateurId: string;
+  message: string;
+}
+
 export interface AuthResult {
   utilisateurId: string;
   accessToken: string;
@@ -166,4 +171,103 @@ export interface ComposantesScore {
   contributionCycles: number;
   contributionPonctualite: number;
   contributionAnciennete: number;
+}
+
+// ─── Create Tontine types ──────────────────────────────────────────────────────
+
+/** POST /api/v1/tontines body */
+export interface CreateTontineRequest {
+  name: string;
+  description: string;
+  contributionAmount: number;
+  periodicity: string;
+  maxMembers: number;
+}
+
+/** POST /api/v1/tontines response */
+export interface CreateTontineResponse {
+  id: string;
+}
+
+// ─── OTP verification ──────────────────────────────────────────────────────────
+
+/** POST /api/v1/auth/verifier-otp body */
+export interface VerifierOtpRequest {
+  telephone: string;
+  code: string;
+}
+
+// ─── Invitation types ──────────────────────────────────────────────────────────
+
+/** GET /api/v1/tontines/:id/invitation/generer response */
+export interface GenererCodeInvitationResponse {
+  code: string;
+  deepLink: string;
+  expiration: string;
+}
+
+/** POST /api/v1/tontines/rejoindre body */
+export interface RejoindreParCodeRequest {
+  code: string;
+  memberName: string;
+}
+
+// ─── Versement history ─────────────────────────────────────────────────────────
+
+/** GET /api/v1/membres/moi/versements item */
+export interface VersementDto {
+  id: string;
+  tontineId: string;
+  payeurId: string;
+  tourId: string;
+  montant: number;
+  devise: string;
+  statut: string;
+  referenceExterne: string | null;
+  createdAt: string;
+  confirmedAt: string | null;
+}
+
+// ─── SMS preferences ──────────────────────────────────────────────────────────
+
+/** PUT /api/v1/membres/moi/sms-preferences body */
+export interface UpdateSmsPreferencesRequest {
+  optOut: boolean;
+}
+
+// ─── Notifications ─────────────────────────────────────────────────────────────
+
+/** In-app notification item */
+export interface NotificationItem {
+  id: string;
+  titre: string;
+  message: string;
+  type: string;
+  dateCreation: string;
+  lu: boolean;
+}
+
+// ─── Tour actuel ───────────────────────────────────────────────────────────────
+
+/** GET /api/v1/tontines/:id/tour-actuel response */
+export interface TourActuelDto {
+  tourId: string;
+  numero: number;
+  beneficiaireNom: string;
+  dateOuverture: string;
+  dateCloture: string | null;
+  estOuvert: boolean;
+  montantAttendu: number;
+  montantCollecte: number;
+  nombrePaiementsRecus: number;
+  nombrePaiementsAttendus: number;
+  membres: TourMembreStatutDto[];
+}
+
+export interface TourMembreStatutDto {
+  membreId: string;
+  nom: string;
+  aPaye: boolean;
+  montant: number | null;
+  joursRetard: number;
 }

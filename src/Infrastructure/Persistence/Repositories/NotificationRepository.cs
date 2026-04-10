@@ -27,6 +27,13 @@ internal sealed class NotificationRepository : INotificationRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Notification>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Notifications
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(Notification notification, CancellationToken cancellationToken = default)
     {
         await _dbContext.Notifications.AddAsync(notification, cancellationToken);

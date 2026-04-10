@@ -31,7 +31,7 @@ public class ProfilCreditController : ControllerBase
     /// <response code="200">Credit profile found.</response>
     /// <response code="404">No credit profile found for this member.</response>
     [HttpGet("{id:guid}/profil-credit")]
-    [Authorize]
+    [Authorize(Roles = "Gestionnaire,Admin")]
     [ProducesResponseType(typeof(ProfilCreditDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProfilCredit(

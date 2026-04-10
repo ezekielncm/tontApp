@@ -5,6 +5,7 @@ using Application.IdentityManagement.Commands.ConnecterUtilisateur;
 using Application.IdentityManagement.Commands.Deconnecter;
 using Application.IdentityManagement.Commands.InscrireUtilisateur;
 using Application.IdentityManagement.Commands.RefreshToken;
+using Application.IdentityManagement.Commands.VerifierOtp;
 using Application.IdentityManagement.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -27,15 +28,10 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Register a new user with a phone number and password.
+    /// An OTP code is sent via SMS for verification.
     /// </summary>
-    /// <param name="request">Registration details (phone in E.164 format, name, password).</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>JWT access and refresh tokens.</returns>
-    /// <response code="201">User registered successfully.</response>
-    /// <response code="400">Validation error (invalid phone format, weak password, etc.).</response>
-    /// <response code="409">A user with this phone number already exists.</response>
     [HttpPost("register")]
-    [ProducesResponseType(typeof(AuthResult), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(InscrireUtilisateurResult), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register(
@@ -55,6 +51,29 @@ public class AuthController : ControllerBase
         catch (InvalidOperationException ex) when (ex.Message.Contains("existe déjà"))
         {
             return Conflict(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Verify the OTP code sent during registration and obtain JWT tokens.
+    /// </summary>
+    [HttpPost("verifier-otp")]
+    [ProducesResponseType(typeof(AuthResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> VerifierOtp(
+        [FromBody] VerifierOtpRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var command = new VerifierOtpCommand(request.Telephone, request.Code);
+            var result = await _mediator.Send(command, cancellationToken);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Unauthorized(new { error = ex.Message });
         }
     }
 
@@ -139,7 +158,9 @@ public class AuthController : ControllerBase
         if (userIdClaim is null || !Guid.TryParse(userIdClaim.Value, out var userId))
             return Unauthorized();
 
-        var command = new DeconnecterCommand(userId);
+        var jti = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Jti)?.Value;
+
+        var command = new DeconnecterCommand(userId, jti);
         await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
@@ -159,3 +180,8 @@ public sealed record LoginRequest(string Telephone, string MotDePasse);
 /// Refresh token request body.
 /// </summary>
 public sealed record RefreshRequest(string RefreshToken);
+
+/// <summary>
+/// OTP verification request body.
+/// </summary>
+public sealed record VerifierOtpRequest(string Telephone, string Code);

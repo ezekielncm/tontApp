@@ -24,8 +24,21 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.tontinesapp.mobile",
-      "minSdkVersion": 26
+      "minSdkVersion": 26,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "tontinesapp"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
+    "scheme": "tontinesapp",
     "web": {
       "favicon": "./assets/favicon.png"
     },

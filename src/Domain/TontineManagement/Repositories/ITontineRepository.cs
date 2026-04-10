@@ -1,5 +1,6 @@
 namespace Domain.TontineManagement.Repositories;
 
+using Domain.IdentityManagement.ValueObjects;
 using Domain.TontineManagement.ValueObjects;
 
 public interface ITontineRepository
@@ -8,6 +9,7 @@ public interface ITontineRepository
     Task<Tontine?> GetByIdReadOnlyAsync(TontineId id, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Tontine>> GetAllReadOnlyAsync(CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Tontine>> GetByStatusReadOnlyAsync(TontineStatus status, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Tontine>> GetByGestionnaireIdReadOnlyAsync(UtilisateurId gestionnaireId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Finds the tontine that contains an invitation matching the given code hash.

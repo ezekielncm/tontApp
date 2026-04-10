@@ -15,7 +15,12 @@ import { QUERY_STALE_TIME_MS, QUERY_CACHE_TIME_MS } from './src/config/constants
 import { setupNotificationHandler } from './src/services/notificationService';
 
 // Configure foreground notification display before component tree mounts
-setupNotificationHandler();
+// Wrapped in try-catch: expo-notifications is not supported in Expo Go (SDK 53+).
+try {
+  setupNotificationHandler();
+} catch {
+  // Silently ignore – notifications will not display in foreground in Expo Go.
+}
 
 /**
  * React Query client configured for offline-first reading:

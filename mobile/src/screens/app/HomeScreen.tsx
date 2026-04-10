@@ -60,6 +60,18 @@ export function HomeScreen({ navigation }: Props): React.JSX.Element {
     navigation.navigate('Profil');
   }, [navigation]);
 
+  const handleCreateTontine = useCallback(() => {
+    navigation.navigate('CreateTontine');
+  }, [navigation]);
+
+  const handleNavigateNotifications = useCallback(() => {
+    navigation.navigate('Notifications');
+  }, [navigation]);
+
+  const handleNavigateRejoindre = useCallback(() => {
+    navigation.navigate('RejoindreParCode');
+  }, [navigation]);
+
   const renderItem = useCallback(
     ({ item }: { item: TontineSummary }) => (
       <TontineCard tontine={item} onPress={handleNavigateDetail} />
@@ -73,13 +85,31 @@ export function HomeScreen({ navigation }: Props): React.JSX.Element {
     <View style={styles.container}>
       <View style={styles.topBar}>
         <Text style={styles.greeting}>Mes Tontines</Text>
-        <TouchableOpacity
-          onPress={handleNavigateProfil}
-          accessibilityRole="button"
-          accessibilityLabel="Voir mon profil"
-        >
-          <Text style={styles.profilLink}>Profil</Text>
-        </TouchableOpacity>
+        <View style={styles.topBarActions}>
+          <TouchableOpacity
+            onPress={handleNavigateRejoindre}
+            accessibilityRole="button"
+            accessibilityLabel="Rejoindre une tontine"
+            style={styles.topBarButton}
+          >
+            <Text style={styles.topBarIcon}>🤝</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleNavigateNotifications}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+            style={styles.topBarButton}
+          >
+            <Text style={styles.topBarIcon}>🔔</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleNavigateProfil}
+            accessibilityRole="button"
+            accessibilityLabel="Voir mon profil"
+          >
+            <Text style={styles.profilLink}>Profil</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {error ? <ErrorBanner message={error.message} /> : null}
@@ -104,10 +134,30 @@ export function HomeScreen({ navigation }: Props): React.JSX.Element {
               <Text style={styles.emptyText}>
                 Aucune tontine pour le moment.
               </Text>
+              <TouchableOpacity
+                style={styles.createButtonEmpty}
+                onPress={handleCreateTontine}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.createButtonEmptyText}>
+                  + Créer ma première tontine
+                </Text>
+              </TouchableOpacity>
             </View>
           }
         />
       )}
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={handleCreateTontine}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel="Créer une tontine"
+      >
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -123,6 +173,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
+  },
+  topBarActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  topBarButton: {
+    padding: spacing.xs,
+  },
+  topBarIcon: {
+    fontSize: 22,
   },
   greeting: {
     fontSize: fontSizes.xl,
@@ -147,5 +208,39 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: fontSizes.md,
     color: colors.textSecondary,
+    marginBottom: spacing.lg,
+  },
+  createButtonEmpty: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: 12,
+  },
+  createButtonEmptyText: {
+    color: colors.textOnPrimary,
+    fontSize: fontSizes.md,
+    fontWeight: '600',
+  },
+  fab: {
+    position: 'absolute',
+    right: spacing.lg,
+    bottom: spacing.xl,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.27,
+    shadowRadius: 4.65,
+  },
+  fabText: {
+    fontSize: 28,
+    color: colors.textOnPrimary,
+    fontWeight: '300',
+    lineHeight: 30,
   },
 });

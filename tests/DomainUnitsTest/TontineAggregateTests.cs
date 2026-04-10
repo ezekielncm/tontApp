@@ -1,3 +1,4 @@
+using Domain.IdentityManagement.ValueObjects;
 using Domain.TontineManagement;
 using Domain.TontineManagement.Entities;
 using Domain.TontineManagement.Events;
@@ -7,6 +8,8 @@ namespace DomainUnitsTest;
 
 public class TontineAggregateTests
 {
+    private static readonly UtilisateurId TestGestionnaireId = UtilisateurId.Create();
+
     private static Tontine CreateDefaultTontine(
         string name = "Tontine Test",
         decimal amount = 5000m,
@@ -15,7 +18,7 @@ public class TontineAggregateTests
         ModeAttribution modeAttribution = ModeAttribution.Sequentiel)
     {
         var contribution = ContributionAmount.Create(amount, currency);
-        return Tontine.Create(name, "Description test", contribution, TontinePeriodicity.Monthly, maxMembers, modeAttribution);
+        return Tontine.Create(name, "Description test", contribution, TontinePeriodicity.Monthly, maxMembers, TestGestionnaireId, modeAttribution);
     }
 
     private static Tontine CreateActiveTontine(int memberCount = 3)
@@ -33,7 +36,7 @@ public class TontineAggregateTests
     public void Create_SetsReglementWithCorrectValues()
     {
         var contribution = ContributionAmount.Create(5000m, "XOF");
-        var tontine = Tontine.Create("Tontine A", null, contribution, TontinePeriodicity.Weekly, 10, ModeAttribution.Aleatoire);
+        var tontine = Tontine.Create("Tontine A", null, contribution, TontinePeriodicity.Weekly, 10, TestGestionnaireId, ModeAttribution.Aleatoire);
 
         Assert.Equal(5000m, tontine.Reglement.ContributionAmount.Amount);
         Assert.Equal("XOF", tontine.Reglement.ContributionAmount.Currency);

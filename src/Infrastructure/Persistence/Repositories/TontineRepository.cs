@@ -1,5 +1,6 @@
 namespace Infrastructure.Persistence.Repositories;
 
+using Domain.IdentityManagement.ValueObjects;
 using Domain.TontineManagement;
 using Domain.TontineManagement.Entities;
 using Domain.TontineManagement.Repositories;
@@ -8,9 +9,9 @@ using Microsoft.EntityFrameworkCore;
 
 internal sealed class TontineRepository : ITontineRepository
 {
-    private const string MembersNavigation = "_members";
-    private const string RoundsNavigation = "_rounds";
-    private const string InvitationsNavigation = "_invitations";
+    private const string MembersNavigation = "Members";
+    private const string RoundsNavigation = "Rounds";
+    private const string InvitationsNavigation = "Invitations";
 
     private readonly TontineDbContext _dbContext;
 
@@ -82,11 +83,23 @@ internal sealed class TontineRepository : ITontineRepository
 
     public async Task<int> CountByGestionnaireAsync(string gestionnaireId, CancellationToken cancellationToken = default)
     {
-        // NOTE: The Tontine aggregate does not currently have a CreatedBy/GestionnaireId field.
-        // The Redis-based billing cache (BillingCacheService) tracks per-user tontine counts
-        // authoritatively. This DB fallback returns 0 as a safe default for MVP.
-        // A future migration should add a created_by column to the tontines table.
-        await Task.CompletedTask;
-        return 0;
+        if (!Guid.TryParse(gestionnaireId, out var guid))
+            return 0;
+
+        return await _dbContext.Tontines
+            .Where(t => t.GestionnaireId == UtilisateurId.From(guid)
+                      && t.Status != TontineStatus.Cancelled)
+            .CountAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Tontine>> GetByGestionnaireIdReadOnlyAsync(UtilisateurId gestionnaireId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Tontines
+            .AsNoTracking()
+            .Include(MembersNavigation)
+            .Include(RoundsNavigation)
+            .Where(t => t.GestionnaireId == gestionnaireId)
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync(cancellationToken);
     }
 }

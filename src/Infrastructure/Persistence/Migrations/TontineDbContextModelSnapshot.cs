@@ -312,6 +312,12 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("role");
 
+                    b.Property<bool>("SmsOptOut")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("sms_opt_out");
+
                     b.Property<string>("Telephone")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -643,6 +649,10 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");
+
+                    b.Property<Guid>("GestionnaireId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("gestionnaire_id");
 
                     b.Property<string>("Name")
                         .IsRequired()

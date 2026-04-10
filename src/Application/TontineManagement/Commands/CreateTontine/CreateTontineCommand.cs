@@ -7,4 +7,5 @@ public sealed record CreateTontineCommand(
     string Description,
     decimal ContributionAmount,
     string Periodicity,
-    int MaxMembers) : ICommand<Guid>;
+    int MaxMembers,
+    Guid GestionnaireId) : ICommand<Guid>;

@@ -22,8 +22,8 @@ RUN dotnet publish "Api.csproj" \
 # ── Stage 2: Runtime ──────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS final
 
-# Install curl for healthcheck
-RUN apk add --no-cache curl
+# Install curl for healthcheck + krb5-libs for Npgsql Kerberos support
+RUN apk add --no-cache curl krb5-libs
 
 # Create non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

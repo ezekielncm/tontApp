@@ -11,6 +11,8 @@ public class TontineAggregateComprehensiveTests
 {
     // ── Helpers ─────────────────────────────────────────────────────
 
+    private static readonly UtilisateurId TestGestionnaireId = UtilisateurId.Create();
+
     private static Tontine CreateDraftTontine(
         string name = "Test Tontine",
         string? description = "A test tontine",
@@ -20,7 +22,7 @@ public class TontineAggregateComprehensiveTests
         ModeAttribution mode = ModeAttribution.Sequentiel)
     {
         var contribution = ContributionAmount.Create(amount, currency);
-        return Tontine.Create(name, description, contribution, TontinePeriodicity.Monthly, maxMembers, mode);
+        return Tontine.Create(name, description, contribution, TontinePeriodicity.Monthly, maxMembers, TestGestionnaireId, mode);
     }
 
     private static Tontine CreateActiveTontine(int memberCount = 3, int maxMembers = 5, ModeAttribution mode = ModeAttribution.Sequentiel)

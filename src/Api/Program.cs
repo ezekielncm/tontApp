@@ -1,6 +1,10 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using Application;
+using Application.IdentityManagement.Services;
+using Domain.IdentityManagement;
+using Domain.IdentityManagement.Repositories;
+using Domain.IdentityManagement.ValueObjects;
 using Hangfire;
 using Infrastructure;
 using Infrastructure.Jobs;
@@ -10,13 +14,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Prometheus;
+using QuestPDF.Infrastructure;
 using Serilog;
 
 namespace Api;
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         // ── Serilog bootstrap ──────────────────────────────────────────
         Log.Logger = new LoggerConfiguration()
@@ -25,6 +30,7 @@ public class Program
 
         try
         {
+            QuestPDF.Settings.License = LicenseType.Community;
             var builder = WebApplication.CreateBuilder(args);
 
             // ── Serilog ────────────────────────────────────────────────
@@ -39,7 +45,7 @@ public class Program
             builder.Services.AddApplication();
 
             // ── Infrastructure layer (EF Core, Hangfire, Redis, repos) ─
-            builder.Services.AddInfrastructure(builder.Configuration);
+            builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
             // ── JWT Authentication ─────────────────────────────────────
             builder.Services
@@ -109,6 +115,24 @@ public class Program
             {
                 var db = scope.ServiceProvider.GetRequiredService<TontineDbContext>();
                 db.Database.Migrate();
+
+                // ── Seed Admin user from env vars ──────────────────────
+                var adminPhone = Environment.GetEnvironmentVariable("ADMIN_PHONE");
+                var adminPassword = Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
+                if (!string.IsNullOrEmpty(adminPhone) && !string.IsNullOrEmpty(adminPassword))
+                {
+                    var userRepo = scope.ServiceProvider.GetRequiredService<IUtilisateurRepository>();
+                    var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+                    var exists = await userRepo.ExistsByTelephoneAsync(adminPhone);
+                    if (!exists)
+                    {
+                        var hash = hasher.Hash(adminPassword);
+                        var admin = Utilisateur.Create(adminPhone, "Admin", hash, RoleUtilisateur.Admin);
+                        await userRepo.AddAsync(admin);
+                        await db.SaveChangesAsync();
+                        Log.Information("Seed: Admin user created with phone {Phone}", adminPhone);
+                    }
+                }
             }
 
             // ── HTTP pipeline ──────────────────────────────────────────
@@ -126,6 +150,7 @@ public class Program
             app.UseHttpMetrics();
 
             app.UseAuthentication();
+            app.UseMiddleware<Api.Middleware.AccessTokenBlacklistMiddleware>();
             app.UseAuthorization();
 
             app.UseRateLimiter();
@@ -182,7 +207,7 @@ public class Program
             app.MapHealthChecks("/health");
             app.MapMetrics(); // Prometheus /metrics endpoint
 
-            app.Run();
+            await app.RunAsync();
         }
         catch (Exception ex)
         {

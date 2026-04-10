@@ -10,4 +10,5 @@ public sealed record TontineDto(
     string Status,
     int MaxMembers,
     int CurrentMemberCount,
+    Guid GestionnaireId,
     DateTime CreatedAt);

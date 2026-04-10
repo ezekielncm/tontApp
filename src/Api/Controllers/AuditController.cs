@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 [ApiController]
 [Route("api/v1/tontines")]
 [Produces("application/json")]
-[Authorize]
+[Authorize(Roles = "Gestionnaire,Admin")]
 public class AuditController : ControllerBase
 {
     private readonly IMediator _mediator;

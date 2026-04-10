@@ -16,6 +16,7 @@ public class Tontine : AggregateRoot<TontineId>
     public string? Description { get; private set; }
     public Reglement Reglement { get; private set; }
     public TontineStatus Status { get; private set; }
+    public UtilisateurId GestionnaireId { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? StartedAt { get; private set; }
 
@@ -33,17 +34,20 @@ public class Tontine : AggregateRoot<TontineId>
     {
         Name = string.Empty;
         Reglement = default!;
+        GestionnaireId = default!;
     }
 
     private Tontine(
         TontineId id,
         string name,
         string? description,
-        Reglement reglement) : base(id)
+        Reglement reglement,
+        UtilisateurId gestionnaireId) : base(id)
     {
         Name = name;
         Description = description;
         Reglement = reglement;
+        GestionnaireId = gestionnaireId;
         Status = TontineStatus.Draft;
         CreatedAt = DateTime.UtcNow;
     }
@@ -55,6 +59,7 @@ public class Tontine : AggregateRoot<TontineId>
         ContributionAmount contributionAmount,
         TontinePeriodicity periodicity,
         int maxMembers,
+        UtilisateurId gestionnaireId,
         ModeAttribution modeAttribution = ModeAttribution.Sequentiel)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -66,7 +71,8 @@ public class Tontine : AggregateRoot<TontineId>
             TontineId.Create(),
             name,
             description,
-            reglement);
+            reglement,
+            gestionnaireId);
 
         tontine.AddDomainEvent(new TontineCreatedEvent(tontine.Id, name));
 

@@ -4,11 +4,16 @@ using Application.TontineManagement.Commands.ActivateTontine;
 using Application.TontineManagement.Commands.AddMember;
 using Application.TontineManagement.Commands.CloturerTour;
 using Application.TontineManagement.Commands.CreateTontine;
+using Application.TontineManagement.Commands.EnvoyerMessage;
 using Application.TontineManagement.Commands.GenererCodeInvitation;
+using Application.TontineManagement.Services;
 using Application.TontineManagement.Commands.OuvrirTour;
 using Application.TontineManagement.Commands.RejoindreParCode;
 using Application.TontineManagement.Commands.SuspendreMembre;
+using Application.TontineManagement.Queries.GetMesTontines;
 using Application.TontineManagement.Queries.GetTontineById;
+using Application.TontineManagement.Queries.GetTourActuel;
+using Application.PaymentManagement.Queries.GetVersementsByRound;
 using Infrastructure.Billing;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -26,10 +31,12 @@ using System.Security.Claims;
 public class TontineController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ITontineExportService _exportService;
 
-    public TontineController(IMediator mediator)
+    public TontineController(IMediator mediator, ITontineExportService exportService)
     {
         _mediator = mediator;
+        _exportService = exportService;
     }
 
     /// <summary>
@@ -48,12 +55,19 @@ public class TontineController : ControllerBase
         [FromBody] CreateTontineRequest request,
         CancellationToken cancellationToken)
     {
+        var userIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var gestionnaireId))
+            return Unauthorized(new { error = "User identity could not be determined." });
+
         var command = new CreateTontineCommand(
             request.Name,
             request.Description,
             request.ContributionAmount,
             request.Periodicity,
-            request.MaxMembers);
+            request.MaxMembers,
+            gestionnaireId);
 
         var tontineId = await _mediator.Send(command, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = tontineId }, new CreateTontineResponse(tontineId));
@@ -127,6 +141,7 @@ public class TontineController : ControllerBase
     /// <response code="400">Business rule violation (not enough members, wrong status).</response>
     /// <response code="404">Tontine not found.</response>
     [HttpPost("{id:guid}/activate")]
+    [Authorize(Roles = "Gestionnaire,Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -158,6 +173,7 @@ public class TontineController : ControllerBase
     /// <response code="400">Business rule violation (round already open, no remaining members).</response>
     /// <response code="404">Tontine not found.</response>
     [HttpPost("{id:guid}/rounds/open")]
+    [Authorize(Roles = "Gestionnaire,Admin")]
     [ProducesResponseType(typeof(OpenRoundResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -191,6 +207,7 @@ public class TontineController : ControllerBase
     /// <response code="400">Business rule violation (round already closed, wrong status).</response>
     /// <response code="404">Tontine or round not found.</response>
     [HttpPost("{id:guid}/rounds/{roundId:guid}/close")]
+    [Authorize(Roles = "Gestionnaire,Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -303,6 +320,7 @@ public class TontineController : ControllerBase
     /// <response code="400">Validation error or business rule violation.</response>
     /// <response code="404">Tontine or member not found.</response>
     [HttpPut("{id:guid}/membres/{membreId:guid}/suspendre")]
+    [Authorize(Roles = "Gestionnaire,Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -324,6 +342,114 @@ public class TontineController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    // ── GET /api/v1/tontines/mes-tontines ──────────────────────────
+    /// <summary>
+    /// Get all tontines managed by the authenticated user.
+    /// </summary>
+    [HttpGet("mes-tontines")]
+    [ProducesResponseType(typeof(IReadOnlyList<TontineDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMesTontines(CancellationToken cancellationToken)
+    {
+        var userIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var gestionnaireId))
+            return Unauthorized(new { error = "User identity could not be determined." });
+
+        var query = new GetMesTontinesQuery(gestionnaireId);
+        var tontines = await _mediator.Send(query, cancellationToken);
+        return Ok(tontines);
+    }
+
+    // ── GET /api/v1/tontines/{id}/tours/{tourId}/paiements ─────────
+    /// <summary>
+    /// Get all payments for a specific round of a tontine.
+    /// </summary>
+    [HttpGet("{id:guid}/tours/{tourId:guid}/paiements")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPaiementsByRound(
+        Guid id,
+        Guid tourId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetVersementsByRoundQuery(id, tourId);
+        var versements = await _mediator.Send(query, cancellationToken);
+        return Ok(versements);
+    }
+
+    // ── GET /api/v1/tontines/{id}/tours/actuel ─────────────────────
+    /// <summary>
+    /// Get the current (open) round details with payment progress.
+    /// </summary>
+    [HttpGet("{id:guid}/tours/actuel")]
+    [ProducesResponseType(typeof(TourActuelDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetTourActuel(Guid id, CancellationToken cancellationToken)
+    {
+        var query = new GetTourActuelQuery(id);
+        var tour = await _mediator.Send(query, cancellationToken);
+
+        if (tour is null)
+            return NotFound(new { error = "Aucun tour en cours pour cette tontine." });
+
+        return Ok(tour);
+    }
+
+    // ── POST /api/v1/tontines/{id}/messages ────────────────────────
+    /// <summary>
+    /// Send a custom message to all active members of a tontine (gestionnaire only).
+    /// </summary>
+    [HttpPost("{id:guid}/messages")]
+    [Authorize(Roles = "Gestionnaire,Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> EnvoyerMessage(
+        Guid id,
+        [FromBody] EnvoyerMessageRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var userIdClaim = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var gestionnaireId))
+                return Unauthorized(new { error = "User identity could not be determined." });
+
+            var command = new EnvoyerMessageCommand(id, gestionnaireId, request.Message);
+            await _mediator.Send(command, cancellationToken);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Export tontine history as PDF.
+    /// </summary>
+    [HttpGet("{id:guid}/export/pdf")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> ExportPdf(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var pdfBytes = await _exportService.GeneratePdfAsync(id, cancellationToken);
+            return File(pdfBytes, "application/pdf", $"tontine-{id:N}.pdf");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
     }
 }
 
@@ -366,3 +492,8 @@ public sealed record RejoindreParCodeRequest(string Code, string MemberName);
 /// Request body for suspending a member.
 /// </summary>
 public sealed record SuspendreMembreRequest(string Motif);
+
+/// <summary>
+/// Request body for sending a custom message to tontine members.
+/// </summary>
+public sealed record EnvoyerMessageRequest(string Message);

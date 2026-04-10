@@ -18,12 +18,13 @@ public class SmsTemplateTests
     [Fact]
     public void VersementConfirme_ReturnsMessageUnder160Chars()
     {
-        var message = SmsTemplate.VersementConfirme(50000, "XOF", "Tontine Solidaire Ouagadougou");
+        var message = SmsTemplate.VersementConfirme(50000, "XOF", "Tontine Solidaire Ouagadougou", "TX-123456");
 
         Assert.True(message.Length <= ContenuMessage.MaxLength,
             $"Message length {message.Length} exceeds max {ContenuMessage.MaxLength}");
         Assert.Contains("50000", message);
         Assert.Contains("XOF", message);
+        Assert.Contains("TX-123456", message);
     }
 
     [Fact]
@@ -85,7 +86,7 @@ public class SmsTemplateTests
         var templates = new[]
         {
             SmsTemplate.TourOuvert(longName, 99),
-            SmsTemplate.VersementConfirme(999999.99m, "XOF", longName),
+            SmsTemplate.VersementConfirme(999999.99m, "XOF", longName, "REF-999"),
             SmsTemplate.RappelJ3(longName, 999999.99m, "XOF"),
             SmsTemplate.RappelJ1(longName, 999999.99m, "XOF"),
             SmsTemplate.PaiementEnRetard(longName, 999999.99m, "XOF"),

@@ -97,8 +97,14 @@ export function RegisterScreen({ navigation }: Props): React.JSX.Element {
   const handleRegister = useCallback(async () => {
     const data = validate();
     if (!data) return;
-    await register(data.telephone, data.nom, data.motDePasse);
-  }, [validate, register]);
+    const success = await register(data.telephone, data.nom, data.motDePasse);
+    if (success) {
+      navigation.navigate('VerifierOtp', {
+        telephone: data.telephone,
+        nom: data.nom,
+      });
+    }
+  }, [validate, register, navigation]);
 
   return (
     <KeyboardAvoidingView
