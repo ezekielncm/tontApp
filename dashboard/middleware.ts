@@ -26,10 +26,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET environment variable is not set");
+  }
+
   try {
-    const secret = new TextEncoder().encode(
-      process.env.JWT_SECRET ?? "CHANGE_ME_min_32_chars_secure_random_key"
-    );
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
     const { payload } = await jwtVerify(token, secret, {
       issuer: process.env.JWT_ISSUER ?? "TontinesApp",
