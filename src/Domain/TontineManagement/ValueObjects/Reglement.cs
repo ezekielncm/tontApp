@@ -8,7 +8,7 @@ using Domain.Common;
 /// </summary>
 public sealed class Reglement : ValueObject
 {
-    public ContributionAmount ContributionAmount { get; } = null!;
+    public ContributionAmount ContributionAmount { get; }
     public TontinePeriodicity Periodicity { get; }
     public int MaxMembers { get; }
     public ModeAttribution ModeAttribution { get; }
