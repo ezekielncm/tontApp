@@ -14,7 +14,7 @@ permissions:
 jobs:
   build-and-test:
     name: Build & Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
@@ -36,7 +36,7 @@ jobs:
 
   docker-push:
     name: Build & Push Docker Image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build-and-test
 
     steps:
@@ -66,7 +66,7 @@ jobs:
 
   deploy:
     name: Deploy to VM
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: docker-push
 
     steps:
