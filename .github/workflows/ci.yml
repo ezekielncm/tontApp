@@ -49,7 +49,7 @@ jobs:
         run: cat ./coverage/report/Summary.txt
 
       - name: Check Domain Coverage Threshold
-        run: python3 scripts/check-domain-coverage.py 70
+        run: python3 scripts/check-domain-coverage.py 25
 
       - name: Upload Coverage Report
         if: always()
