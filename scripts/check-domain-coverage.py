@@ -12,7 +12,7 @@ import sys
 import xml.etree.ElementTree as ET
 
 
-def calculate_domain_coverage(report_pattern: str = "./coverage/**/coverage.cobertura.xml") -> float:
+def calculate_domain_coverage(report_pattern: str = "./coverage/report/coverage.cobertura.xml") -> float:
     files = glob.glob(report_pattern, recursive=True)
     total_lines = 0
     covered_lines = 0
