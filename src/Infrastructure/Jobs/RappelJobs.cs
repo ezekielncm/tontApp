@@ -48,19 +48,20 @@ public sealed class RappelJ3Job
                     var message = SmsTemplate.RappelJ3(tontine.Name, montant, devise);
 
                     var members = tontine.GetActiveMembers();
-                    foreach (var member in members)
-                    {
-                        // Skip the beneficiary of this round (they receive, not pay)
-                        if (member.Id == round.BeneficiaryId)
-                            continue;
+                    var destinataireIds = members
+                        .Where(m => m.Id != round.BeneficiaryId)
+                        .Select(m => m.Id.Value.ToString())
+                        .ToList();
 
-                        await _notificationService.PlanifierNotificationAsync(
-                            member.Id.Value.ToString(),
+                    if (destinataireIds.Any())
+                    {
+                        var planned = await _notificationService.PlanifierNotificationsAsync(
+                            destinataireIds,
                             NotificationType.RappelPaiement,
                             message,
                             cancellationToken);
 
-                        notificationsSent++;
+                        notificationsSent += planned;
                     }
                 }
             }
@@ -112,18 +113,20 @@ public sealed class RappelJ1Job
                     var message = SmsTemplate.RappelJ1(tontine.Name, montant, devise);
 
                     var members = tontine.GetActiveMembers();
-                    foreach (var member in members)
-                    {
-                        if (member.Id == round.BeneficiaryId)
-                            continue;
+                    var destinataireIds = members
+                        .Where(m => m.Id != round.BeneficiaryId)
+                        .Select(m => m.Id.Value.ToString())
+                        .ToList();
 
-                        await _notificationService.PlanifierNotificationAsync(
-                            member.Id.Value.ToString(),
+                    if (destinataireIds.Any())
+                    {
+                        var planned = await _notificationService.PlanifierNotificationsAsync(
+                            destinataireIds,
                             NotificationType.RappelPaiement,
                             message,
                             cancellationToken);
 
-                        notificationsSent++;
+                        notificationsSent += planned;
                     }
                 }
             }
@@ -170,15 +173,16 @@ public sealed class RecapHebdoJob
             var membresAJour = totalMembers;
             var message = SmsTemplate.RecapHebdomadaire(tontine.Name, membresAJour, totalMembers);
 
-            foreach (var member in members)
+            var destinataireIds = members.Select(m => m.Id.Value.ToString()).ToList();
+            if (destinataireIds.Any())
             {
-                await _notificationService.PlanifierNotificationAsync(
-                    member.Id.Value.ToString(),
+                var planned = await _notificationService.PlanifierNotificationsAsync(
+                    destinataireIds,
                     NotificationType.RecapHebdomadaire,
                     message,
                     cancellationToken);
 
-                notificationsSent++;
+                notificationsSent += planned;
             }
         }
 

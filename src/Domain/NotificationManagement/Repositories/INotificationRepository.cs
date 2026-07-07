@@ -10,8 +10,16 @@ public interface INotificationRepository
     Task AddAsync(Notification notification, CancellationToken cancellationToken = default);
     Task UpdateAsync(Notification notification, CancellationToken cancellationToken = default);
 
+    Task AddRangeAsync(IEnumerable<Notification> notifications, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Counts SMS notifications sent to a member today for rate limiting (max 10 SMS/member/day).
     /// </summary>
     Task<int> CountTodayByDestinataireAsync(string destinataireId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Counts SMS notifications sent to multiple members today for rate limiting.
+    /// Returns a dictionary mapping DestinataireId to their count.
+    /// </summary>
+    Task<Dictionary<string, int>> CountTodayByDestinatairesAsync(IEnumerable<string> destinataireIds, CancellationToken cancellationToken = default);
 }
