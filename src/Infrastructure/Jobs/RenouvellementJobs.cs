@@ -232,7 +232,6 @@ public sealed class RenouvellementAbonnementJob
                 // Soft downgrade: expire the subscription
                 abonnement.Expirer();
                 await _abonnementRepository.UpdateAsync(abonnement, cancellationToken);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 _logger.LogInformation(
                     "RenouvellementAbonnementJob: expired abonnement {AbonnementId} after grace period",
@@ -244,6 +243,11 @@ public sealed class RenouvellementAbonnementJob
                     "RenouvellementAbonnementJob: error expiring abonnement {AbonnementId}",
                     abonnement.Id.Value);
             }
+        }
+
+        if (graceAbonnements.Count > 0)
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
 }
