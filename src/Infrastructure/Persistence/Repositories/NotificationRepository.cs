@@ -39,6 +39,11 @@ internal sealed class NotificationRepository : INotificationRepository
         await _dbContext.Notifications.AddAsync(notification, cancellationToken);
     }
 
+    public async Task AddRangeAsync(IEnumerable<Notification> notifications, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.Notifications.AddRangeAsync(notifications, cancellationToken);
+    }
+
     public Task UpdateAsync(Notification notification, CancellationToken cancellationToken = default)
     {
         _dbContext.Notifications.Update(notification);
@@ -51,5 +56,28 @@ internal sealed class NotificationRepository : INotificationRepository
         return await _dbContext.Notifications
             .Where(n => n.DestinataireId == destinataireId && n.CreatedAt >= todayUtc)
             .CountAsync(cancellationToken);
+    }
+
+    public async Task<Dictionary<string, int>> CountTodayByDestinatairesAsync(IEnumerable<string> destinataireIds, CancellationToken cancellationToken = default)
+    {
+        var todayUtc = DateTime.UtcNow.Date;
+        var ids = destinataireIds.ToList();
+
+        var counts = await _dbContext.Notifications
+            .Where(n => ids.Contains(n.DestinataireId) && n.CreatedAt >= todayUtc)
+            .GroupBy(n => n.DestinataireId)
+            .Select(g => new { DestinataireId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(k => k.DestinataireId, v => v.Count, cancellationToken);
+
+        // Ensure all provided IDs have an entry, even if 0
+        foreach (var id in ids)
+        {
+            if (!counts.ContainsKey(id))
+            {
+                counts[id] = 0;
+            }
+        }
+
+        return counts;
     }
 }

@@ -36,7 +36,10 @@ jobs:
             -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
       - name: Install ReportGenerator
-        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+        run: |
+          for i in 1 2 3 4 5; do
+            dotnet tool install -g dotnet-reportgenerator-globaltool --ignore-failed-sources && break || sleep 5
+          done
 
       - name: Generate Coverage Report
         run: |
