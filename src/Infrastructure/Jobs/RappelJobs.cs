@@ -38,30 +38,27 @@ public sealed class RappelJ3Job
 
         foreach (var tontine in activeTontines)
         {
-            var rounds = tontine.GetActiveRounds();
-            foreach (var round in rounds)
+            var targetRounds = tontine.GetActiveRounds()
+                .Where(r => r.DateLimite.Date == targetDate && !r.IsCompleted);
+
+            foreach (var round in targetRounds)
             {
-                if (round.DateLimite.Date == targetDate && !round.IsCompleted)
+                var montant = tontine.ContributionAmount?.Amount ?? 0;
+                var devise = tontine.ContributionAmount?.Currency ?? "XOF";
+                var message = SmsTemplate.RappelJ3(tontine.Name, montant, devise);
+
+                var payingMembers = tontine.GetActiveMembers()
+                    .Where(m => m.Id != round.BeneficiaryId);
+
+                foreach (var member in payingMembers)
                 {
-                    var montant = tontine.ContributionAmount?.Amount ?? 0;
-                    var devise = tontine.ContributionAmount?.Currency ?? "XOF";
-                    var message = SmsTemplate.RappelJ3(tontine.Name, montant, devise);
+                    await _notificationService.PlanifierNotificationAsync(
+                        member.Id.Value.ToString(),
+                        NotificationType.RappelPaiement,
+                        message,
+                        cancellationToken);
 
-                    var members = tontine.GetActiveMembers();
-                    foreach (var member in members)
-                    {
-                        // Skip the beneficiary of this round (they receive, not pay)
-                        if (member.Id == round.BeneficiaryId)
-                            continue;
-
-                        await _notificationService.PlanifierNotificationAsync(
-                            member.Id.Value.ToString(),
-                            NotificationType.RappelPaiement,
-                            message,
-                            cancellationToken);
-
-                        notificationsSent++;
-                    }
+                    notificationsSent++;
                 }
             }
         }
@@ -102,29 +99,27 @@ public sealed class RappelJ1Job
 
         foreach (var tontine in activeTontines)
         {
-            var rounds = tontine.GetActiveRounds();
-            foreach (var round in rounds)
+            var targetRounds = tontine.GetActiveRounds()
+                .Where(r => r.DateLimite.Date == targetDate && !r.IsCompleted);
+
+            foreach (var round in targetRounds)
             {
-                if (round.DateLimite.Date == targetDate && !round.IsCompleted)
+                var montant = tontine.ContributionAmount?.Amount ?? 0;
+                var devise = tontine.ContributionAmount?.Currency ?? "XOF";
+                var message = SmsTemplate.RappelJ1(tontine.Name, montant, devise);
+
+                var payingMembers = tontine.GetActiveMembers()
+                    .Where(m => m.Id != round.BeneficiaryId);
+
+                foreach (var member in payingMembers)
                 {
-                    var montant = tontine.ContributionAmount?.Amount ?? 0;
-                    var devise = tontine.ContributionAmount?.Currency ?? "XOF";
-                    var message = SmsTemplate.RappelJ1(tontine.Name, montant, devise);
+                    await _notificationService.PlanifierNotificationAsync(
+                        member.Id.Value.ToString(),
+                        NotificationType.RappelPaiement,
+                        message,
+                        cancellationToken);
 
-                    var members = tontine.GetActiveMembers();
-                    foreach (var member in members)
-                    {
-                        if (member.Id == round.BeneficiaryId)
-                            continue;
-
-                        await _notificationService.PlanifierNotificationAsync(
-                            member.Id.Value.ToString(),
-                            NotificationType.RappelPaiement,
-                            message,
-                            cancellationToken);
-
-                        notificationsSent++;
-                    }
+                    notificationsSent++;
                 }
             }
         }
