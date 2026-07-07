@@ -77,7 +77,7 @@ namespace Application.UnitTests.TontineManagement.Commands.ActivateTontine
 
             _tontineRepositoryMock
                 .Setup(r => r.GetByIdAsync(It.IsAny<TontineId>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Tontine)null);
+                .ReturnsAsync((Tontine?)null);
 
             // Act
             Func<Task> act = async () => await _handler.Handle(command, CancellationToken.None);
