@@ -52,4 +52,19 @@ internal sealed class NotificationRepository : INotificationRepository
             .Where(n => n.DestinataireId == destinataireId && n.CreatedAt >= todayUtc)
             .CountAsync(cancellationToken);
     }
+
+    public async Task AddRangeAsync(IEnumerable<Notification> notifications, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.Notifications.AddRangeAsync(notifications, cancellationToken);
+    }
+
+    public async Task<IDictionary<string, int>> GetTodayCountsByDestinatairesAsync(IEnumerable<string> destinataireIds, CancellationToken cancellationToken = default)
+    {
+        var todayUtc = DateTime.UtcNow.Date;
+        return await _dbContext.Notifications
+            .Where(n => destinataireIds.Contains(n.DestinataireId) && n.CreatedAt >= todayUtc)
+            .GroupBy(n => n.DestinataireId)
+            .Select(g => new { DestinataireId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.DestinataireId, x => x.Count, cancellationToken);
+    }
 }
