@@ -6,6 +6,7 @@
     <Project Path="src/Infrastructure/Infrastructure.csproj" Id="9b739748-aebc-4c8b-9fa2-6d17136a2174" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Application.UnitTests/Application.UnitTests.csproj" />
     <Project Path="tests/AuthHandlerTests/AuthHandlerTests.csproj" Id="a1b2c3d4-e5f6-7890-abcd-ef1234567890" />
     <Project Path="tests/DomainUnitsTest/DomainUnitsTest.csproj" Id="99fb9ddb-2d76-4e60-ab70-41ad5ce0340d" />
     <Project Path="tests/NotificationTests/NotificationTests.csproj" />
