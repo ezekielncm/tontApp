@@ -14,8 +14,10 @@ import xml.etree.ElementTree as ET
 
 def calculate_domain_coverage(report_pattern: str = "./coverage/**/coverage.cobertura.xml") -> float:
     files = glob.glob(report_pattern, recursive=True)
-    total_lines = 0
-    covered_lines = 0
+
+    # Track the maximum hits for each line in each class across all reports
+    # Key: (class_name, line_number), Value: max_hits
+    line_hits = {}
 
     for f in files:
         tree = ET.parse(f)
@@ -24,10 +26,17 @@ def calculate_domain_coverage(report_pattern: str = "./coverage/**/coverage.cobe
             name = package.get("name", "")
             if "Domain" in name:
                 for cls in package.findall(".//class"):
+                    cls_name = cls.get("name", "")
                     for line in cls.findall(".//line"):
-                        total_lines += 1
-                        if int(line.get("hits", "0")) > 0:
-                            covered_lines += 1
+                        line_num = line.get("number", "")
+                        hits = int(line.get("hits", "0"))
+
+                        key = (cls_name, line_num)
+                        if key not in line_hits or hits > line_hits[key]:
+                            line_hits[key] = hits
+
+    total_lines = len(line_hits)
+    covered_lines = sum(1 for hits in line_hits.values() if hits > 0)
 
     if total_lines == 0:
         return 0.0

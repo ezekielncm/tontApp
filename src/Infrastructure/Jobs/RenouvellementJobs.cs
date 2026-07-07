@@ -42,14 +42,22 @@ public sealed class RappelRenouvellementJ3Job
         var targetDate = DateTime.UtcNow.Date.AddDays(3);
         var expiringAbonnements = await _abonnementRepository.GetExpiringAsync(targetDate, cancellationToken);
 
+        var targetAbonnements = expiringAbonnements.Where(a => a.DateFin.Date == targetDate).ToList();
+
+        var uniquePlanIds = targetAbonnements.Select(a => a.PlanId).Distinct().ToList();
+        var plansCache = new Dictionary<PlanAbonnementId, PlanAbonnement?>();
+
+        foreach (var planId in uniquePlanIds)
+        {
+            var plan = await _planRepository.GetByIdAsync(planId, cancellationToken);
+            plansCache[planId] = plan;
+        }
+
         var notificationsSent = 0;
 
-        foreach (var abonnement in expiringAbonnements)
+        foreach (var abonnement in targetAbonnements)
         {
-            if (abonnement.DateFin.Date != targetDate)
-                continue;
-
-            var plan = await _planRepository.GetByIdAsync(abonnement.PlanId, cancellationToken);
+            plansCache.TryGetValue(abonnement.PlanId, out var plan);
             var planNom = plan?.Nom ?? abonnement.Plan.ToString();
 
             var message = SmsTemplate.RappelRenouvellement(
