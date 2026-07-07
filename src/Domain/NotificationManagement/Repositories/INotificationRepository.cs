@@ -14,4 +14,8 @@ public interface INotificationRepository
     /// Counts SMS notifications sent to a member today for rate limiting (max 10 SMS/member/day).
     /// </summary>
     Task<int> CountTodayByDestinataireAsync(string destinataireId, CancellationToken cancellationToken = default);
+
+    Task AddRangeAsync(IEnumerable<Notification> notifications, CancellationToken cancellationToken = default);
+
+    Task<IDictionary<string, int>> GetTodayCountsByDestinatairesAsync(IEnumerable<string> destinataireIds, CancellationToken cancellationToken = default);
 }

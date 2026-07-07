@@ -36,6 +36,8 @@ public sealed class RappelJ3Job
         var targetDate = DateTime.UtcNow.Date.AddDays(3);
         var notificationsSent = 0;
 
+        var notificationsToPlan = new List<(string DestinataireId, NotificationType Type, string Contenu)>();
+
         foreach (var tontine in activeTontines)
         {
             var rounds = tontine.GetActiveRounds();
@@ -54,16 +56,19 @@ public sealed class RappelJ3Job
                         if (member.Id == round.BeneficiaryId)
                             continue;
 
-                        await _notificationService.PlanifierNotificationAsync(
+                        notificationsToPlan.Add((
                             member.Id.Value.ToString(),
                             NotificationType.RappelPaiement,
-                            message,
-                            cancellationToken);
-
-                        notificationsSent++;
+                            message
+                        ));
                     }
                 }
             }
+        }
+
+        if (notificationsToPlan.Any())
+        {
+            notificationsSent = await _notificationService.PlanifierNotificationsBatchAsync(notificationsToPlan, cancellationToken);
         }
 
         _logger.LogInformation("RappelJ3Job: {Count} reminder notifications planned", notificationsSent);
@@ -100,6 +105,8 @@ public sealed class RappelJ1Job
         var targetDate = DateTime.UtcNow.Date.AddDays(1);
         var notificationsSent = 0;
 
+        var notificationsToPlan = new List<(string DestinataireId, NotificationType Type, string Contenu)>();
+
         foreach (var tontine in activeTontines)
         {
             var rounds = tontine.GetActiveRounds();
@@ -117,16 +124,19 @@ public sealed class RappelJ1Job
                         if (member.Id == round.BeneficiaryId)
                             continue;
 
-                        await _notificationService.PlanifierNotificationAsync(
+                        notificationsToPlan.Add((
                             member.Id.Value.ToString(),
                             NotificationType.RappelPaiement,
-                            message,
-                            cancellationToken);
-
-                        notificationsSent++;
+                            message
+                        ));
                     }
                 }
             }
+        }
+
+        if (notificationsToPlan.Any())
+        {
+            notificationsSent = await _notificationService.PlanifierNotificationsBatchAsync(notificationsToPlan, cancellationToken);
         }
 
         _logger.LogInformation("RappelJ1Job: {Count} reminder notifications planned", notificationsSent);
@@ -161,6 +171,8 @@ public sealed class RecapHebdoJob
 
         var notificationsSent = 0;
 
+        var notificationsToPlan = new List<(string DestinataireId, NotificationType Type, string Contenu)>();
+
         foreach (var tontine in activeTontines)
         {
             var members = tontine.GetActiveMembers();
@@ -172,14 +184,17 @@ public sealed class RecapHebdoJob
 
             foreach (var member in members)
             {
-                await _notificationService.PlanifierNotificationAsync(
+                notificationsToPlan.Add((
                     member.Id.Value.ToString(),
                     NotificationType.RecapHebdomadaire,
-                    message,
-                    cancellationToken);
-
-                notificationsSent++;
+                    message
+                ));
             }
+        }
+
+        if (notificationsToPlan.Any())
+        {
+            notificationsSent = await _notificationService.PlanifierNotificationsBatchAsync(notificationsToPlan, cancellationToken);
         }
 
         _logger.LogInformation("RecapHebdoJob: {Count} recap notifications planned", notificationsSent);

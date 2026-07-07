@@ -21,6 +21,13 @@ public interface INotificationService
         NotificationType type,
         string contenu,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates notifications in batch and adds them to the outbox for async processing.
+    /// </summary>
+    Task<int> PlanifierNotificationsBatchAsync(
+        IEnumerable<(string DestinataireId, NotificationType Type, string Contenu)> requests,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class NotificationService : INotificationService
@@ -77,5 +84,45 @@ public sealed class NotificationService : INotificationService
             notification.Id, destinataireId, type);
 
         return true;
+    }
+
+    public async Task<int> PlanifierNotificationsBatchAsync(
+        IEnumerable<(string DestinataireId, NotificationType Type, string Contenu)> requests,
+        CancellationToken cancellationToken = default)
+    {
+        var validNotifications = new List<Notification>();
+        var requestsList = requests.ToList();
+
+        var destinataireIds = requestsList.Select(r => r.DestinataireId).Distinct().ToList();
+        var countsToday = await _notificationRepository.GetTodayCountsByDestinatairesAsync(destinataireIds, cancellationToken);
+
+        foreach (var req in requestsList)
+        {
+            var notification = Notification.CreateFull(req.DestinataireId, Canal.SMS, req.Type, req.Contenu);
+
+            if (!notification.EstCritique())
+            {
+                countsToday.TryGetValue(req.DestinataireId, out var countToday);
+                if (countToday >= MaxSmsParJourParMembre)
+                {
+                    _logger.LogWarning(
+                        "Rate limit reached for member {DestinataireId}: {Count} SMS sent today (max {Max}). Notification dropped.",
+                        req.DestinataireId, countToday, MaxSmsParJourParMembre);
+                    continue;
+                }
+                countsToday[req.DestinataireId] = countToday + 1; // Increment for subsequent requests in the same batch
+            }
+
+            validNotifications.Add(notification);
+        }
+
+        if (validNotifications.Any())
+        {
+            await _notificationRepository.AddRangeAsync(validNotifications, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("{Count} notifications planned in batch.", validNotifications.Count);
+        }
+
+        return validNotifications.Count;
     }
 }
