@@ -5,7 +5,7 @@ using Domain.Common;
 public sealed class ContributionAmount : ValueObject
 {
     public decimal Amount { get; }
-    public string Currency { get; }
+    public string Currency { get; } = null!;
 
     // Required by EF Core for owned type binding
     private ContributionAmount() { }

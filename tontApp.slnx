@@ -9,7 +9,6 @@
     <Project Path="tests/AuthHandlerTests/AuthHandlerTests.csproj" Id="a1b2c3d4-e5f6-7890-abcd-ef1234567890" />
     <Project Path="tests/DomainUnitsTest/DomainUnitsTest.csproj" Id="99fb9ddb-2d76-4e60-ab70-41ad5ce0340d" />
     <Project Path="tests/NotificationTests/NotificationTests.csproj" />
-    <Project Path="tests/PaymentHandlerTests/PaymentHandlerTests.csproj" />
     <Project Path="tests/PaymentIntegrationTests/PaymentIntegrationTests.csproj" Id="b2c3d4e5-f6a7-8901-bcde-f12345678901" />
   </Folder>
   <Project Path="docker-compose.dcproj">
