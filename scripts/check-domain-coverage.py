@@ -22,7 +22,7 @@ def calculate_domain_coverage(report_pattern: str = "./coverage/**/coverage.cobe
         root = tree.getroot()
         for package in root.findall(".//package"):
             name = package.get("name", "")
-            if "Domain" in name:
+            if "Domain" == name:
                 for cls in package.findall(".//class"):
                     for line in cls.findall(".//line"):
                         total_lines += 1
