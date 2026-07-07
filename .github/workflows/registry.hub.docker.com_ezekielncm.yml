@@ -15,7 +15,7 @@ env:
   PROJECT_NAME_FOR_DOCKER: api
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout to the branch
       uses: actions/checkout@v4
@@ -34,7 +34,7 @@ jobs:
         tags: ${{ env.CONTAINER_REGISTRY_LOGIN_SERVER }}/${{ env.PROJECT_NAME_FOR_DOCKER }}:${{ github.sha }}
         file: ${{ env.DOCKER_FILE_PATH }}
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: build
     steps:
     - name: Azure Login
