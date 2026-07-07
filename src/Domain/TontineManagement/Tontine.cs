@@ -358,7 +358,7 @@ public class Tontine : AggregateRoot<TontineId>
         return Reglement.ModeAttribution switch
         {
             ModeAttribution.Sequentiel => candidates.OrderBy(m => m.Rang).First(),
-            ModeAttribution.Aleatoire => candidates[Random.Shared.Next(candidates.Count)],
+            ModeAttribution.Aleatoire => candidates[System.Security.Cryptography.RandomNumberGenerator.GetInt32(candidates.Count)],
             _ => throw new InvalidOperationException("Unknown attribution mode.")
         };
     }
