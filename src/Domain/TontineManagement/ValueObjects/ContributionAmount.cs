@@ -2,20 +2,14 @@ namespace Domain.TontineManagement.ValueObjects;
 
 using Domain.Common;
 
-using System.Diagnostics.CodeAnalysis;
-
 public sealed class ContributionAmount : ValueObject
 {
-    public required decimal Amount { get; init; }
-    public required string Currency { get; init; }
+    public decimal Amount { get; }
+    public string Currency { get; }
 
     // Required by EF Core for owned type binding
-    private ContributionAmount()
-    {
-        Currency = null!;
-    }
+    private ContributionAmount() { }
 
-    [SetsRequiredMembers]
     private ContributionAmount(decimal amount, string currency)
     {
         Amount = amount;

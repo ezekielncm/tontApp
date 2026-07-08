@@ -6,23 +6,17 @@ using Domain.Common;
 /// Immutable value object representing the rules of a tontine.
 /// Once the tontine is activated, the Reglement cannot be modified.
 /// </summary>
-using System.Diagnostics.CodeAnalysis;
-
 public sealed class Reglement : ValueObject
 {
-    public required ContributionAmount ContributionAmount { get; init; }
-    public required TontinePeriodicity Periodicity { get; init; }
-    public required int MaxMembers { get; init; }
-    public required ModeAttribution ModeAttribution { get; init; }
-    public required int MinMembresActivation { get; init; }
+    public ContributionAmount ContributionAmount { get; }
+    public TontinePeriodicity Periodicity { get; }
+    public int MaxMembers { get; }
+    public ModeAttribution ModeAttribution { get; }
+    public int MinMembresActivation { get; }
 
     // Required by EF Core for owned type binding
-    private Reglement()
-    {
-        ContributionAmount = null!;
-    }
+    private Reglement() { }
 
-    [SetsRequiredMembers]
     private Reglement(
         ContributionAmount contributionAmount,
         TontinePeriodicity periodicity,
