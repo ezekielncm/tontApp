@@ -20,7 +20,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore tontApp.slnx
+        run: dotnet restore tontApp.slnx || (sleep 10 && dotnet restore tontApp.slnx) || (sleep 20 && dotnet restore tontApp.slnx)
 
       - name: Build
         run: dotnet build tontApp.slnx --configuration Release --no-restore
