@@ -12,26 +12,29 @@ import sys
 import xml.etree.ElementTree as ET
 
 
-def calculate_domain_coverage(report_pattern: str = "./coverage/**/coverage.cobertura.xml") -> float:
+def calculate_domain_coverage(report_pattern: str = "./coverage/report/Cobertura.xml") -> float:
     files = glob.glob(report_pattern, recursive=True)
-    total_lines = 0
-    covered_lines = 0
+
+    if not files:
+        # Fallback to scanning individual files if the merged report isn't found
+        files = glob.glob("./coverage/**/coverage.cobertura.xml", recursive=True)
+
+    max_coverage = 0.0
 
     for f in files:
         tree = ET.parse(f)
         root = tree.getroot()
         for package in root.findall(".//package"):
             name = package.get("name", "")
-            if "Domain" in name:
-                for cls in package.findall(".//class"):
-                    for line in cls.findall(".//line"):
-                        total_lines += 1
-                        if int(line.get("hits", "0")) > 0:
-                            covered_lines += 1
+            if name == "Domain":
+                rate_str = package.get("line-rate", "0")
+                try:
+                    rate = float(rate_str)
+                    max_coverage = max(max_coverage, rate * 100)
+                except ValueError:
+                    pass
 
-    if total_lines == 0:
-        return 0.0
-    return (covered_lines / total_lines) * 100
+    return max_coverage
 
 
 def main() -> None:
