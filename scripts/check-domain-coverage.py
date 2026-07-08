@@ -14,23 +14,40 @@ import xml.etree.ElementTree as ET
 
 def calculate_domain_coverage(report_pattern: str = "./coverage/**/coverage.cobertura.xml") -> float:
     files = glob.glob(report_pattern, recursive=True)
-    total_lines = 0
-    covered_lines = 0
+
+    # We want to aggregate lines correctly by taking the maximum hits across all files
+    # since coverlet might produce multiple xml files (one per test project) and a line might be hit
+    # in one project but not another.
+
+    lines_dict = {} # key: (class_name, line_number), value: max_hits
 
     for f in files:
-        tree = ET.parse(f)
-        root = tree.getroot()
-        for package in root.findall(".//package"):
-            name = package.get("name", "")
-            if "Domain" in name:
-                for cls in package.findall(".//class"):
-                    for line in cls.findall(".//line"):
-                        total_lines += 1
-                        if int(line.get("hits", "0")) > 0:
-                            covered_lines += 1
+        try:
+            tree = ET.parse(f)
+            root = tree.getroot()
+            for package in root.findall(".//package"):
+                name = package.get("name", "")
+                if "Domain" in name:
+                    for cls in package.findall(".//class"):
+                        cls_name = cls.get("name")
+                        for line in cls.findall(".//line"):
+                            line_num = line.get("number")
+                            hits = int(line.get("hits", "0"))
 
+                            key = (cls_name, line_num)
+                            if key not in lines_dict:
+                                lines_dict[key] = hits
+                            else:
+                                lines_dict[key] = max(lines_dict[key], hits)
+        except Exception as e:
+            print(f"Error parsing {f}: {e}")
+
+    total_lines = len(lines_dict)
     if total_lines == 0:
         return 0.0
+
+    covered_lines = sum(1 for hits in lines_dict.values() if hits > 0)
+
     return (covered_lines / total_lines) * 100
 
 
