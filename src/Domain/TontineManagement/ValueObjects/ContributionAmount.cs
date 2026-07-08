@@ -8,7 +8,7 @@ public sealed class ContributionAmount : ValueObject
     public string Currency { get; }
 
     // Required by EF Core for owned type binding
-    private ContributionAmount() { }
+    private ContributionAmount() { Currency = null!; }
 
     private ContributionAmount(decimal amount, string currency)
     {
