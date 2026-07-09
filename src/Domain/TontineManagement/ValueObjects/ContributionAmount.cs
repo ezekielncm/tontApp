@@ -4,12 +4,13 @@ using Domain.Common;
 
 public sealed class ContributionAmount : ValueObject
 {
-    public decimal Amount { get; }
-    public string Currency { get; }
+    public required decimal Amount { get; init; }
+    public required string Currency { get; init; }
 
     // Required by EF Core for owned type binding
-    private ContributionAmount() { }
+    private ContributionAmount() { Currency = null!; }
 
+    [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
     private ContributionAmount(decimal amount, string currency)
     {
         Amount = amount;

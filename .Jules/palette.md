@@ -1,0 +1,3 @@
+## 2025-07-09 - Added Navigation ARIA and Keyboard Focus to Sidebar
+**Learning:** In Next.js sidebars using `next/link`, keyboard users and screen readers often lack context for the active page and struggle to identify which element has focus against dark backgrounds. Adding `aria-current="page"` and explicit, high-contrast `focus-visible` utility classes (e.g., `focus-visible:ring-white` on a dark sidebar) significantly improves navigation accessibility.
+**Action:** Always verify `aria-current` usage for active state styling and test keyboard navigation contrast on non-white backgrounds, particularly sidebars and navbars.
