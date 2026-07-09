@@ -8,15 +8,16 @@ using Domain.Common;
 /// </summary>
 public sealed class Reglement : ValueObject
 {
-    public ContributionAmount ContributionAmount { get; }
-    public TontinePeriodicity Periodicity { get; }
-    public int MaxMembers { get; }
-    public ModeAttribution ModeAttribution { get; }
-    public int MinMembresActivation { get; }
+    public required ContributionAmount ContributionAmount { get; init; }
+    public required TontinePeriodicity Periodicity { get; init; }
+    public required int MaxMembers { get; init; }
+    public required ModeAttribution ModeAttribution { get; init; }
+    public required int MinMembresActivation { get; init; }
 
     // Required by EF Core for owned type binding
-    private Reglement() { }
+    private Reglement() { ContributionAmount = null!; }
 
+    [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
     private Reglement(
         ContributionAmount contributionAmount,
         TontinePeriodicity periodicity,
