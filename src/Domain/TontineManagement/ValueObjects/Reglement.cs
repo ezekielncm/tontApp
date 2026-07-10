@@ -15,7 +15,9 @@ public sealed class Reglement : ValueObject
     public int MinMembresActivation { get; }
 
     // Required by EF Core for owned type binding
+#pragma warning disable CS8618
     private Reglement() { }
+#pragma warning restore CS8618
 
     private Reglement(
         ContributionAmount contributionAmount,

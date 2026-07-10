@@ -12,8 +12,8 @@ export default function Pagination({
   onPageChange,
 }: PaginationProps) {
   return (
-    <div className="flex items-center justify-between py-3">
-      <p className="text-sm text-gray-700">
+    <nav className="flex items-center justify-between py-3" aria-label="Pagination">
+      <p className="text-sm text-gray-700" aria-live="polite">
         Page <span className="font-medium">{page}</span> sur{" "}
         <span className="font-medium">{totalPages}</span>
       </p>
@@ -21,18 +21,20 @@ export default function Pagination({
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          aria-label="Page précédente"
+          className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
         >
           Précédent
         </button>
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          aria-label="Page suivante"
+          className="px-3 py-1 text-sm border rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
         >
           Suivant
         </button>
       </div>
-    </div>
+    </nav>
   );
 }

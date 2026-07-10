@@ -1,0 +1,4 @@
+
+## 2026-07-10 - [Accessibilité] Indicateurs non-visuels pour la pagination dynamique
+**Learning:** L'utilisation de `aria-live="polite"` sur le texte décrivant la page courante d'une pagination permet aux lecteurs d'écran d'annoncer les changements de page (contenu dynamique) de manière subtile sans interrompre la lecture de l'utilisateur. De plus, ajouter `aria-label` aux conteneurs de pagination et aux boutons, ainsi que des styles clairs de focus clavier (`focus-visible`), rend la navigation beaucoup plus intuitive pour les utilisateurs au clavier ou avec un lecteur d'écran.
+**Action:** Toujours s'assurer d'ajouter `aria-live="polite"` pour les informations de progression ou les compteurs de page qui se mettent à jour dynamiquement, et toujours intégrer des `focus-visible` ring sur les éléments interactifs.
