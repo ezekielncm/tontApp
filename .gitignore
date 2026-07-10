@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 # Environment variables (secrets)
 .env.nuget/
+
+# Coverage reports
+coverage/
