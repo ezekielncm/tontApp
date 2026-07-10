@@ -8,7 +8,9 @@ public sealed class ContributionAmount : ValueObject
     public string Currency { get; }
 
     // Required by EF Core for owned type binding
+#pragma warning disable CS8618
     private ContributionAmount() { }
+#pragma warning restore CS8618
 
     private ContributionAmount(decimal amount, string currency)
     {
