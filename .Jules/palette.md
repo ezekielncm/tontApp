@@ -1,0 +1,3 @@
+## 2026-07-11 - Add aria-current and focus-visible styles to navigation
+**Learning:** Navigation items without explicit `aria-current="page"` make it difficult for screen reader users to identify their current location, while missing visible focus states hinder keyboard navigation (violates WCAG 2.1 AA).
+**Action:** Always add `aria-current="page"` to the active navigation link and include `focus-visible` utility classes (e.g., `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white`) for custom interactive components like links and buttons to ensure clear keyboard focus.
