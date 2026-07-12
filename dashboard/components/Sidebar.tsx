@@ -43,7 +43,8 @@ export default function Sidebar({ role }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              aria-current={isActive ? "page" : undefined}
+              className={`block px-3 py-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
                 isActive
                   ? "bg-gray-700 text-white"
                   : "text-gray-300 hover:bg-gray-800 hover:text-white"
@@ -61,7 +62,7 @@ export default function Sidebar({ role }: SidebarProps) {
             await fetch("/api/auth/logout", { method: "POST" });
             window.location.href = "/login";
           }}
-          className="w-full px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors text-left"
+          className="w-full px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >
           Déconnexion
         </button>
