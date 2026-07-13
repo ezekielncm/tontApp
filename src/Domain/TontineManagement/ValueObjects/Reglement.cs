@@ -2,21 +2,24 @@ namespace Domain.TontineManagement.ValueObjects;
 
 using Domain.Common;
 
+using System.Diagnostics.CodeAnalysis;
+
 /// <summary>
 /// Immutable value object representing the rules of a tontine.
 /// Once the tontine is activated, the Reglement cannot be modified.
 /// </summary>
 public sealed class Reglement : ValueObject
 {
-    public ContributionAmount ContributionAmount { get; }
-    public TontinePeriodicity Periodicity { get; }
-    public int MaxMembers { get; }
-    public ModeAttribution ModeAttribution { get; }
-    public int MinMembresActivation { get; }
+    public required ContributionAmount ContributionAmount { get; init; }
+    public required TontinePeriodicity Periodicity { get; init; }
+    public required int MaxMembers { get; init; }
+    public required ModeAttribution ModeAttribution { get; init; }
+    public required int MinMembresActivation { get; init; }
 
     // Required by EF Core for owned type binding
-    private Reglement() { }
+    private Reglement() { ContributionAmount = null!; }
 
+    [SetsRequiredMembers]
     private Reglement(
         ContributionAmount contributionAmount,
         TontinePeriodicity periodicity,
