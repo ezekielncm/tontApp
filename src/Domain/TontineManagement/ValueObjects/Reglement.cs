@@ -2,10 +2,6 @@ namespace Domain.TontineManagement.ValueObjects;
 
 using Domain.Common;
 
-/// <summary>
-/// Immutable value object representing the rules of a tontine.
-/// Once the tontine is activated, the Reglement cannot be modified.
-/// </summary>
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
