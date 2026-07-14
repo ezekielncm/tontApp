@@ -1,0 +1,3 @@
+## 2024-07-14 - Improve Active Navigation Link Accessibility
+**Learning:** Adding the `aria-current="page"` attribute to the active link in a navigation menu is essential to inform screen reader users of their current location within the application, fulfilling an important accessibility requirement. Also ensuring custom `focus-visible` states, especially on dark backgrounds, makes navigation significantly easier for keyboard users.
+**Action:** Always verify that navigation components programmatically expose the currently active route using `aria-current="page"` and have clear, visible focus states using classes like `focus-visible:ring-2`.
