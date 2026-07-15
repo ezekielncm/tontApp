@@ -1,0 +1,3 @@
+## 2026-07-15 - Improve Keyboard Accessibility and Screen Reader Support in Sidebar Navigation
+**Learning:** In dark mode sidebars (like `bg-gray-900`), default browser focus outlines are often invisible. Additionally, screen readers need explicit cues to know which navigation link represents the currently active page.
+**Action:** Always add `aria-current="page"` to active navigation links and explicitly define `focus-visible` styles with sufficient contrast (e.g., `focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900`) for all interactive elements like links and buttons in dark sections.
