@@ -1,0 +1,3 @@
+## 2026-07-17 - Keyboard Focus in Dark Mode and aria-current
+**Learning:** In dark mode UI sections (e.g., bg-gray-900), the default browser focus outlines are often rendered invisible against the dark background. Also, navigation menus don't have aria-current for current page indication by default.
+**Action:** When styling interactive elements in dark areas, explicitly define focus-visible styles with sufficient contrast (e.g., `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900`) for interactive elements. Also, always add `aria-current="page"` to active navigation links to ensure proper screen reader support for the current location.
