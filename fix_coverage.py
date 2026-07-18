@@ -1,21 +1,13 @@
-#!/usr/bin/env python3
-"""
-Check domain code coverage from Cobertura XML reports.
-Exits with code 1 if coverage is below the threshold.
-
-Usage: python3 scripts/check-domain-coverage.py [threshold]
-  threshold: minimum coverage percentage (default: 70)
-"""
-
-import glob
-import sys
 import xml.etree.ElementTree as ET
+import glob
 
-
-def calculate_domain_coverage(report_pattern: str = "./coverage/report/Cobertura.xml") -> float:
+def calculate_domain_coverage(report_pattern: str = "./coverage/**/coverage.cobertura.xml") -> float:
     files = glob.glob(report_pattern, recursive=True)
 
-    domain_lines = {}
+    # We must deduplicate lines because multiple test projects generate coverage for the same Domain classes,
+    # causing total_lines to be artificially inflated if we just blindly sum them up.
+    # We will use a set of (filename, line_number) to track unique lines.
+    domain_lines = {} # (filename, line_number) -> hits
 
     for f in files:
         tree = ET.parse(f)
@@ -28,9 +20,11 @@ def calculate_domain_coverage(report_pattern: str = "./coverage/report/Cobertura
                     for line in cls.findall(".//line"):
                         line_number = int(line.get("number", "0"))
                         hits = int(line.get("hits", "0"))
+
                         key = (filename, line_number)
                         if key not in domain_lines:
                             domain_lines[key] = 0
+
                         domain_lines[key] += hits
 
     total_lines = len(domain_lines)
@@ -40,18 +34,4 @@ def calculate_domain_coverage(report_pattern: str = "./coverage/report/Cobertura
         return 0.0
     return (covered_lines / total_lines) * 100
 
-
-def main() -> None:
-    threshold = float(sys.argv[1]) if len(sys.argv) > 1 else 70.0
-    coverage = calculate_domain_coverage()
-    print(f"Domain coverage: {coverage:.1f}%")
-
-    if coverage < threshold:
-        print(f"FAIL: Domain coverage {coverage:.1f}% is below {threshold:.0f}% threshold")
-        sys.exit(1)
-    else:
-        print(f"PASS: Domain coverage {coverage:.1f}% meets {threshold:.0f}% threshold")
-
-
-if __name__ == "__main__":
-    main()
+print(f"Coverage: {calculate_domain_coverage()}")

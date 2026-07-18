@@ -1,0 +1,38 @@
+cat << 'INNEREOF' > patch_coverage.diff
+--- scripts/check-domain-coverage.py
++++ scripts/check-domain-coverage.py
+@@ -10,13 +10,14 @@
+
+
+-def calculate_domain_coverage(report_pattern: str = "./coverage/**/coverage.cobertura.xml") -> float:
++def calculate_domain_coverage(report_pattern: str = "./coverage/report/Cobertura.xml") -> float:
+     files = glob.glob(report_pattern, recursive=True)
+-    total_lines = 0
+-    covered_lines = 0
++    domain_lines = {} # (filename, line_number) -> hits
+
+     for f in files:
+         tree = ET.parse(f)
+         root = tree.getroot()
+         for package in root.findall(".//package"):
+             name = package.get("name", "")
+             if "Domain" in name:
+                 for cls in package.findall(".//class"):
++                    filename = cls.get("filename", "")
+                     for line in cls.findall(".//line"):
+-                        total_lines += 1
+-                        if int(line.get("hits", "0")) > 0:
+-                            covered_lines += 1
++                        line_number = int(line.get("number", "0"))
++                        hits = int(line.get("hits", "0"))
++                        key = (filename, line_number)
++                        if key not in domain_lines:
++                            domain_lines[key] = 0
++                        domain_lines[key] += hits
+
++    total_lines = len(domain_lines)
++    covered_lines = sum(1 for hits in domain_lines.values() if hits > 0)
++
+     if total_lines == 0:
+INNEREOF
+patch -p0 < patch_coverage.diff

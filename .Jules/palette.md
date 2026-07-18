@@ -1,0 +1,3 @@
+## 2024-07-18 - Visible Focus Outlines in Dark Mode
+**Learning:** Default browser focus outlines can become entirely invisible against dark backgrounds (like `bg-gray-900`), severely impacting keyboard accessibility. Additionally, simply highlighting navigation links visually is insufficient for screen readers; explicit `aria-current="page"` is required.
+**Action:** When designing dark mode UI sections or sidebars, always explicitly define `focus-visible` styles with sufficient contrast (e.g., `focus-visible:ring-white focus-visible:ring-offset-gray-900`) and ensure active navigation links include `aria-current="page"`.
