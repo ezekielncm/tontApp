@@ -1,0 +1,3 @@
+## 2025-02-27 - Dark mode focus visibility and active links
+**Learning:** In dark mode sections (e.g., `bg-gray-900`), default browser focus rings may become invisible. Interactive elements need explicit high-contrast `focus-visible` styles (`focus-visible:ring-white focus-visible:ring-offset-gray-900`) to be keyboard accessible. Active links in navigation must use `aria-current="page"` to ensure screen readers announce the current page correctly.
+**Action:** Always check default browser focus ring contrast in dark mode containers and explicitly define accessible rings if needed. Always add `aria-current="page"` to active navigation links.
