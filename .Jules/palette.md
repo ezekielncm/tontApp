@@ -1,0 +1,3 @@
+## 2024-07-20 - Adding explicit dark mode keyboard focus styles and semantic active links
+**Learning:** In dark mode UIs (like bg-gray-900), the default browser focus ring might be invisible due to low contrast, hindering keyboard navigation for screen readers. Furthermore, a simple style change to show active links does not communicate semantics to assistive tools.
+**Action:** Always add `aria-current="page"` to active navigation links and specify explicit high-contrast `focus-visible` outline styles (e.g., `focus-visible:ring-white focus-visible:ring-offset-gray-900`) for interactive elements in dark areas.
