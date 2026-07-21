@@ -1,0 +1,3 @@
+## 2025-01-08 - Dark Mode Focus Visibility and Active States
+**Learning:** In dark mode UI sections (e.g., bg-gray-900), the default browser focus outlines are often rendered invisible against the dark background. Additionally, active navigation links must communicate their state to screen readers, not just visually.
+**Action:** Always explicitly define `focus-visible` styles with sufficient contrast (e.g., `focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 focus:outline-none`) for interactive elements in dark mode, and use `aria-current="page"` on the active navigation link.
