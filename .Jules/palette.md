@@ -1,0 +1,3 @@
+## 2026-07-22 - Focus Styles Contrast in Dark Mode and aria-current
+**Learning:** Default browser focus outlines are often rendered invisible against dark backgrounds (e.g. `bg-gray-900`), and semantic indicators of current state (like `aria-current="page"`) are crucial for screen readers but often missed in manual navigation implementations.
+**Action:** When designing dark mode sections, always explicitly define `focus-visible` styles with sufficient contrast (e.g., `focus-visible:ring-white focus-visible:ring-offset-gray-900`). Additionally, ensure that navigation components apply `aria-current="page"` to the active route, not just visually distinct styling.
