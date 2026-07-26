@@ -1,5 +1,6 @@
 namespace Domain.TontineManagement.ValueObjects;
 
+using System.Diagnostics.CodeAnalysis;
 using Domain.Common;
 
 /// <summary>
@@ -15,8 +16,12 @@ public sealed class Reglement : ValueObject
     public int MinMembresActivation { get; }
 
     // Required by EF Core for owned type binding
-    private Reglement() { }
+    private Reglement()
+    {
+        ContributionAmount = null!;
+    }
 
+    [SetsRequiredMembers]
     private Reglement(
         ContributionAmount contributionAmount,
         TontinePeriodicity periodicity,
