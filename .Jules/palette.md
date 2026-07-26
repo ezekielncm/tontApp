@@ -1,0 +1,3 @@
+## 2026-07-26 - Dark Mode Focus Visibility & Active Link Context
+**Learning:** The default browser focus outlines are often invisible against dark backgrounds (like `bg-gray-900`). Explicitly defining `focus-visible` rings with high contrast (e.g. `ring-white ring-offset-gray-900`) is essential for keyboard navigation. Additionally, visually styling a link to indicate the current page is insufficient for screen readers; `aria-current="page"` is required.
+**Action:** Always specify explicit, high-contrast `focus-visible` styles on interactive elements within dark mode components. Always accompany visual "active page" styling with `aria-current="page"` on navigation links.
