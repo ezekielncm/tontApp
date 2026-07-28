@@ -12,12 +12,18 @@ import sys
 import xml.etree.ElementTree as ET
 
 
-def calculate_domain_coverage(report_pattern: str = "./coverage/**/coverage.cobertura.xml") -> float:
+def calculate_domain_coverage(report_pattern: str = "./coverage/report/Cobertura.xml") -> float:
     files = glob.glob(report_pattern, recursive=True)
     total_lines = 0
     covered_lines = 0
 
-    for f in files:
+    if not files:
+        print(f"Warning: No coverage file found matching {report_pattern}")
+        return 0.0
+
+    # Parse only the first (merged) report
+    f = files[0]
+    try:
         tree = ET.parse(f)
         root = tree.getroot()
         for package in root.findall(".//package"):
@@ -28,6 +34,9 @@ def calculate_domain_coverage(report_pattern: str = "./coverage/**/coverage.cobe
                         total_lines += 1
                         if int(line.get("hits", "0")) > 0:
                             covered_lines += 1
+    except Exception as e:
+        print(f"Error parsing coverage report: {e}")
+        return 0.0
 
     if total_lines == 0:
         return 0.0
