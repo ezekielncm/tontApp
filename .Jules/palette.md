@@ -1,0 +1,3 @@
+## 2024-07-31 - Dark Mode Focus Styles and ARIA Active States
+**Learning:** Default browser focus outlines are often invisible against very dark backgrounds (e.g., `bg-gray-900`), severely impacting keyboard navigation accessibility. Additionally, simply highlighting an active link visually is insufficient for screen readers; they need an explicit ARIA attribute to announce the current page.
+**Action:** Always explicitly define high-contrast `focus-visible` styles in dark mode sections using `focus-visible:ring-white focus-visible:ring-offset-[dark-bg-color]`. Furthermore, always append `aria-current="page"` to active navigation links to ensure screen reader compatibility.
