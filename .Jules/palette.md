@@ -1,0 +1,3 @@
+## 2024-08-01 - Improve Sidebar Accessibility with aria-current and focus-visible
+**Learning:** In dark mode UI sections (e.g., bg-gray-900), explicitly define `focus-visible` styles with sufficient contrast (e.g., `focus-visible:ring-white focus-visible:ring-offset-gray-900`) for interactive elements so that default browser focus outlines are not rendered invisible. Always add `aria-current="page"` to active navigation links in the frontend to ensure proper screen reader support for the current location.
+**Action:** When working on navigation components or dark mode sections, I will proactively check for and add these accessibility attributes and high-contrast focus styles.
