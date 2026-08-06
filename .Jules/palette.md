@@ -1,0 +1,3 @@
+## 2025-05-18 - High-Contrast Focus Indicators for Dark Mode UI
+**Learning:** When styling navigation components in dark mode elements (e.g., `bg-gray-900`), default focus rings (or simple `ring-2` with default colors) are virtually invisible to keyboard users. Setting `aria-current="page"` correctly provides semantic feedback for screen readers indicating the currently active page in a sidebar.
+**Action:** When working on dark mode backgrounds, always explicitly define high-contrast focus rings using classes like `focus-visible:ring-white focus-visible:ring-offset-gray-900` to ensure keyboard navigation is visible and accessible. Additionally, use `aria-current="page"` (not just CSS) to denote the active navigation state.
