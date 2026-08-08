@@ -1,0 +1,3 @@
+## 2024-08-08 - Sidebar Dark Mode Focus and aria-current
+**Learning:** Default browser focus rings can become invisible against dark backgrounds (like `bg-gray-900`). Additionally, visual active states on navigation links don't convey the current location to screen readers.
+**Action:** When working in dark mode UI sections (e.g., bg-gray-900), explicitly define `focus-visible` styles with sufficient contrast (e.g., `focus-visible:ring-white focus-visible:ring-offset-gray-900`) for interactive elements. Also, always add `aria-current="page"` to active navigation links to ensure proper screen reader support for the current location.
