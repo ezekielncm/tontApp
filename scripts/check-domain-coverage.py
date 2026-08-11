@@ -36,7 +36,9 @@ def calculate_domain_coverage(report_pattern: str = "./coverage/**/coverage.cobe
 
 def main() -> None:
     threshold = float(sys.argv[1]) if len(sys.argv) > 1 else 70.0
-    coverage = calculate_domain_coverage()
+    report_pattern = sys.argv[2] if len(sys.argv) > 2 else "./coverage/**/coverage.cobertura.xml"
+
+    coverage = calculate_domain_coverage(report_pattern)
     print(f"Domain coverage: {coverage:.1f}%")
 
     if coverage < threshold:
