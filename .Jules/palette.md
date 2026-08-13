@@ -1,0 +1,3 @@
+## 2024-08-13 - Dark Mode Keyboard Accessibility & Navigation Semantics
+**Learning:** In dark mode UI sections (e.g., bg-gray-900 like the Sidebar), the default browser focus outlines for keyboard navigation are often invisible or have insufficient contrast against the dark background. Also, semantic navigation elements require explicit aria labels and aria-current="page" attributes for robust screen reader support.
+**Action:** When adding interactive elements to dark mode sections, explicitly define `focus-visible` styles with sufficient contrast using Tailwind classes like `focus-visible:ring-white focus-visible:ring-offset-gray-900`. Always add `aria-current="page"` to active links and `aria-label` to the container `<nav>`.

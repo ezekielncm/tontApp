@@ -15,7 +15,10 @@ public sealed class Reglement : ValueObject
     public int MinMembresActivation { get; }
 
     // Required by EF Core for owned type binding
-    private Reglement() { }
+    private Reglement()
+    {
+        ContributionAmount = null!;
+    }
 
     private Reglement(
         ContributionAmount contributionAmount,
