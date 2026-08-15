@@ -3,7 +3,7 @@
 Check domain code coverage from Cobertura XML reports.
 Exits with code 1 if coverage is below the threshold.
 
-Usage: python3 scripts/check-domain-coverage.py [threshold]
+Usage: python3 scripts/check-domain-coverage.py [threshold] [merged_report_xml]
   threshold: minimum coverage percentage (default: 70)
 """
 
@@ -13,21 +13,29 @@ import xml.etree.ElementTree as ET
 
 
 def calculate_domain_coverage(report_pattern: str = "./coverage/**/coverage.cobertura.xml") -> float:
-    files = glob.glob(report_pattern, recursive=True)
+    # Use exact file if provided and not a glob pattern
+    if "*" not in report_pattern:
+        files = [report_pattern]
+    else:
+        files = glob.glob(report_pattern, recursive=True)
+
     total_lines = 0
     covered_lines = 0
 
     for f in files:
-        tree = ET.parse(f)
-        root = tree.getroot()
-        for package in root.findall(".//package"):
-            name = package.get("name", "")
-            if "Domain" in name:
-                for cls in package.findall(".//class"):
-                    for line in cls.findall(".//line"):
-                        total_lines += 1
-                        if int(line.get("hits", "0")) > 0:
-                            covered_lines += 1
+        try:
+            tree = ET.parse(f)
+            root = tree.getroot()
+            for package in root.findall(".//package"):
+                name = package.get("name", "")
+                if "Domain" in name:
+                    for cls in package.findall(".//class"):
+                        for line in cls.findall(".//line"):
+                            total_lines += 1
+                            if int(line.get("hits", "0")) > 0:
+                                covered_lines += 1
+        except FileNotFoundError:
+            print(f"Warning: Coverage file not found: {f}")
 
     if total_lines == 0:
         return 0.0
@@ -36,7 +44,9 @@ def calculate_domain_coverage(report_pattern: str = "./coverage/**/coverage.cobe
 
 def main() -> None:
     threshold = float(sys.argv[1]) if len(sys.argv) > 1 else 70.0
-    coverage = calculate_domain_coverage()
+    report_pattern = sys.argv[2] if len(sys.argv) > 2 else "./coverage/**/coverage.cobertura.xml"
+
+    coverage = calculate_domain_coverage(report_pattern)
     print(f"Domain coverage: {coverage:.1f}%")
 
     if coverage < threshold:
